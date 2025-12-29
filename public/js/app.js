@@ -29,11 +29,24 @@ function checkAuth() {
 }
 
 // Initialize User Interface (Sidebar info, Logout)
+// Initialize User Interface (Sidebar info, Logout)
 function initializeUserInterface() {
     const userJson = localStorage.getItem('user');
     if (userJson) {
         const user = JSON.parse(userJson);
         const isVisitor = localStorage.getItem('isVisitor') === 'true';
+
+        // Populate Profile Info in Sidebar
+        const profileName = document.querySelector('.profile-name');
+        const profileRole = document.querySelector('.profile-role');
+        const profileInitials = document.querySelector('.profile-initials');
+
+        if (profileName) profileName.textContent = user.name || user.username || 'Usuário';
+        if (profileRole) profileRole.textContent = user.role || 'Membro';
+        if (profileInitials) {
+            const name = user.name || user.username || 'U';
+            profileInitials.textContent = name.charAt(0).toUpperCase();
+        }
 
         // Show Users tab only for Admin (or SuperUser)
         if (user.role === 'Admin' || user.username === 'SuperUser') {
