@@ -39,8 +39,7 @@ async function loadTasksModule() {
   }
 
   mainContent.innerHTML = `
-  mainContent.innerHTML = `
-    < div class="max-w-4xl mx-auto animate-slide-in" >
+    <div class="max-w-4xl mx-auto animate-slide-in">
       <h1 class="text-3xl font-bold text-white mb-8 flex items-center gap-3">
         <div class="p-2 bg-primary-500/10 rounded-lg">
             <i class="fas ${isEditMode ? 'fa-edit' : 'fa-plus-circle'} text-primary-400"></i>
@@ -172,7 +171,7 @@ async function loadTasksModule() {
           </button>
         </div>
       </form>
-    </div >
+    </div>
     `;
 
   // Set default date to today if creating new
@@ -200,7 +199,7 @@ function handleFileSelection(e) {
       const div = document.createElement('div');
       div.className = 'screenshot-preview';
       div.innerHTML = `
-    < img src = "${e.target.result}" alt = "Preview" >
+        <img src="${e.target.result}" alt="Preview">
       <button type="button" class="delete-btn" onclick="removeFile(${index})">
         <i class="fas fa-times"></i>
       </button>
@@ -249,7 +248,7 @@ async function handleTaskSubmit(e) {
     let taskId;
 
     if (editingTaskId) {
-      await apiPut(`/ tasks / ${ editingTaskId } `, taskData);
+      await apiPut(`/tasks/${editingTaskId}`, taskData);
       taskId = editingTaskId;
       showNotification('Task atualizada com sucesso!', 'success');
     } else {
@@ -261,17 +260,17 @@ async function handleTaskSubmit(e) {
     // Upload screenshots
     if (selectedFiles.length > 0) {
       for (const file of selectedFiles) {
-        await uploadFile(`/ tasks / ${ taskId }/screenshots`, file);
-}
+        await uploadFile(`/tasks/${taskId}/screenshots`, file);
+      }
     }
 
-selectedFiles = [];
-editingTaskId = null;
-loadModule('task-list');
+    selectedFiles = [];
+    editingTaskId = null;
+    loadModule('task-list');
   } catch (error) {
-  console.error(error);
-  submitBtn.disabled = false;
-  submitBtn.innerHTML = '<i class="fas fa-save"></i> ' + (editingTaskId ? 'Salvar Alterações' : 'Criar Task');
-  showNotification('Erro ao salvar task', 'error');
-}
+    console.error(error);
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = '<i class="fas fa-save"></i> ' + (editingTaskId ? 'Salvar Alterações' : 'Criar Task');
+    showNotification('Erro ao salvar task', 'error');
+  }
 }
