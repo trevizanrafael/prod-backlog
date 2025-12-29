@@ -6,8 +6,8 @@ async function loadRolesModule() {
   mainContent.innerHTML = `
     <div class="max-w-7xl mx-auto">
       <div class="flex justify-between items-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">
-          <i class="fas fa-user-shield mr-3"></i>Tipos de Usuários
+        <h1 class="text-3xl font-bold text-white">
+          <i class="fas fa-user-shield mr-3 text-primary-400"></i>Tipos de Usuários
         </h1>
         <button onclick="openCreateRoleModal()" class="btn btn-primary">
           <i class="fas fa-plus mr-2"></i>Novo Tipo
@@ -33,9 +33,9 @@ async function loadRolesList() {
 
     if (roles.length === 0) {
       container.innerHTML = `
-        <div class="col-span-full card text-center py-12">
-          <i class="fas fa-user-shield text-6xl text-gray-300 mb-4"></i>
-          <p class="text-gray-500 text-lg">Nenhum tipo de usuário cadastrado.</p>
+        <div class="col-span-full card text-center py-12 bg-dark-800/50 border border-white/5">
+          <i class="fas fa-user-shield text-6xl text-gray-600 mb-4"></i>
+          <p class="text-gray-400 text-lg">Nenhum tipo de usuário cadastrado.</p>
         </div>
       `;
       return;
@@ -44,7 +44,7 @@ async function loadRolesList() {
     container.innerHTML = roles.map(role => createRoleCard(role)).join('');
   } catch (error) {
     container.innerHTML = `
-      <div class="col-span-full card text-center text-red-500">
+      <div class="col-span-full card text-center text-red-400 bg-red-900/10 border border-red-500/20">
         <i class="fas fa-exclamation-triangle text-4xl mb-4"></i>
         <p>Erro ao carregar tipos de usuários.</p>
       </div>
@@ -76,11 +76,11 @@ function createRoleCard(role) {
   const isSystemRole = role.name === 'Admin' || role.name === 'Visualizador';
 
   return `
-    <div class="card">
+    <div class="card bg-dark-800/80 hover:bg-dark-800 transition-colors border-white/5 hover:border-primary-500/30">
       <div class="flex justify-between items-start mb-4">
         <div>
-          <h3 class="text-xl font-bold text-gray-900">${role.name}</h3>
-          ${isSystemRole ? '<span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Sistema</span>' : ''}
+          <h3 class="text-xl font-bold text-white">${role.name}</h3>
+          ${isSystemRole ? '<span class="text-xs bg-primary-900/30 text-primary-300 border border-primary-500/30 px-2 py-1 rounded">Sistema</span>' : ''}
         </div>
         ${!isSystemRole ? `
           <div class="flex gap-2">
@@ -94,13 +94,13 @@ function createRoleCard(role) {
         ` : ''}
       </div>
 
-      <div class="border-t pt-4">
-        <p class="text-sm font-semibold text-gray-700 mb-2">Permissões:</p>
+      <div class="border-t border-white/10 pt-4">
+        <p class="text-sm font-semibold text-gray-300 mb-2">Permissões:</p>
         <div class="space-y-1">
           ${enabledPermissions.length > 0
       ? enabledPermissions.map(p => `
-              <div class="flex items-center text-sm text-gray-600">
-                <i class="fas fa-check text-green-600 mr-2"></i>
+              <div class="flex items-center text-sm text-gray-400">
+                <i class="fas fa-check text-green-400 mr-2"></i>
                 ${p}
               </div>
             `).join('')
@@ -114,18 +114,18 @@ function createRoleCard(role) {
 
 function openCreateRoleModal() {
   const modalHtml = `
-    <div id="roleModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
+    <div id="roleModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div class="bg-dark-900 border-2 border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div class="bg-dark-900 px-6 py-4 flex justify-between items-center border-b border-white/10">
           <h3 class="text-xl font-bold text-white">Novo Tipo de Usuário</h3>
-          <button onclick="closeRoleModal()" class="text-white hover:text-gray-200">
+          <button onclick="closeRoleModal()" class="text-gray-400 hover:text-white transition-colors">
             <i class="fas fa-times"></i>
           </button>
         </div>
         <form id="roleForm" class="p-6" onsubmit="submitRole(event)">
           <div class="mb-6">
-            <label class="form-label">Nome do Tipo *</label>
-            <input type="text" id="roleName" class="form-input" placeholder="Ex: Editor, Gerente, etc." required>
+            <label class="form-label text-gray-300">Nome do Tipo *</label>
+            <input type="text" id="roleName" class="form-input bg-dark-800 border-white/10 text-white focus:border-primary-500" placeholder="Ex: Editor, Gerente, etc." required>
           </div>
 
           <div class="mb-6">
@@ -154,9 +154,9 @@ function openCreateRoleModal() {
 
 function createPermissionCheckbox(key, label) {
   return `
-    <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
-      <input type="checkbox" name="permission_${key}" class="w-5 h-5 text-blue-600 rounded mr-3">
-      <span class="text-gray-700">${label}</span>
+    <label class="flex items-center p-3 bg-dark-800 rounded-lg hover:bg-dark-700 cursor-pointer border border-white/5 transition-colors">
+      <input type="checkbox" name="permission_${key}" class="w-5 h-5 text-primary-600 bg-dark-900 border-gray-600 rounded focus:ring-primary-500">
+      <span class="text-gray-300 ml-3">${label}</span>
     </label>
   `;
 }
@@ -197,22 +197,22 @@ async function editRole(roleId) {
       : role.permissions;
 
     const modalHtml = `
-      <div id="roleModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-          <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
+      <div id="roleModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-dark-900 border-2 border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div class="bg-dark-900 px-6 py-4 flex justify-between items-center border-b border-white/10">
             <h3 class="text-xl font-bold text-white">Editar Tipo de Usuário</h3>
-            <button onclick="closeRoleModal()" class="text-white hover:text-gray-200">
+            <button onclick="closeRoleModal()" class="text-gray-400 hover:text-white transition-colors">
               <i class="fas fa-times"></i>
             </button>
           </div>
           <form id="roleForm" class="p-6" onsubmit="updateRole(event, ${roleId})">
             <div class="mb-6">
-              <label class="form-label">Nome do Tipo *</label>
-              <input type="text" id="roleName" class="form-input" value="${role.name}" required>
+              <label class="form-label text-gray-300">Nome do Tipo *</label>
+              <input type="text" id="roleName" class="form-input bg-dark-800 border-white/10 text-white focus:border-primary-500" value="${role.name}" required>
             </div>
 
             <div class="mb-6">
-              <label class="form-label mb-3">Permissões</label>
+              <label class="form-label mb-3 text-gray-300">Permissões</label>
               <div class="space-y-3">
                 ${createPermissionCheckbox('create_task', 'Criar Tasks')}
                 ${createPermissionCheckbox('edit_task', 'Editar Tasks (Status/Notas)')}

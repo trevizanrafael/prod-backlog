@@ -442,36 +442,38 @@ async function completeTask(taskId) {
 
   // Create modal for completion details
   const modalHtml = `
-    <div id="completeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 overflow-hidden">
-        <div class="bg-green-600 px-6 py-4 flex justify-between items-center">
-          <h3 class="text-xl font-bold text-white">Concluir Task #${taskId}</h3>
-          <button onclick="closeCompleteModal()" class="text-white hover:text-gray-200">
+    <div id="completeModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+      <div class="bg-dark-900 border-2 border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
+        <div class="bg-green-900/30 border-b border-green-500/30 px-6 py-4 flex justify-between items-center">
+          <h3 class="text-xl font-bold text-green-400">Concluir Task #${taskId}</h3>
+          <button onclick="closeCompleteModal()" class="text-green-400 hover:text-white transition-colors">
             <i class="fas fa-times"></i>
           </button>
         </div>
-        <div class="p-6">
+        <div class="p-8">
           <form id="completeForm" onsubmit="submitComplete(event, ${taskId})">
-            <div class="mb-4">
-              <label class="block text-gray-700 font-bold mb-2">Como foi resolvido? *</label>
-              <textarea name="resolution_notes" rows="4" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" required placeholder="Descreva a solução aplicada..."></textarea>
+            <div class="mb-6">
+              <label class="block text-gray-300 font-bold mb-2">Como foi resolvido? *</label>
+              <textarea name="resolution_notes" rows="4" class="form-textarea bg-dark-800 border-white/10 text-white focus:border-green-500" required placeholder="Descreva a solução aplicada..."></textarea>
             </div>
             
-            <div class="mb-6">
-              <label class="block text-gray-700 font-bold mb-2">Screenshot da Solução (Opcional)</label>
-              <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer" onclick="document.getElementById('solutionScreenshot').click()">
-                <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
-                <p class="text-gray-500">Clique para fazer upload da imagem</p>
+            <div class="mb-8">
+              <label class="block text-gray-300 font-bold mb-2">Screenshot da Solução (Opcional)</label>
+              <div class="border-2 border-dashed border-white/10 rounded-xl p-8 text-center hover:bg-white/5 transition-colors cursor-pointer group" onclick="document.getElementById('solutionScreenshot').click()">
+                 <div class="w-12 h-12 bg-dark-800 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                     <i class="fas fa-cloud-upload-alt text-xl text-green-400"></i>
+                </div>
+                <p class="text-gray-400 font-medium group-hover:text-white transition-colors">Clique para fazer upload da imagem</p>
                 <input type="file" id="solutionScreenshot" name="screenshot" class="hidden" accept="image/*" onchange="previewSolutionImage(this)">
               </div>
               <div id="solutionPreview" class="mt-4 hidden">
-                <img src="" alt="Preview" class="max-h-48 rounded-lg border border-gray-200 mx-auto">
+                <img src="" alt="Preview" class="max-h-48 rounded-xl border border-white/10 mx-auto shadow-lg">
               </div>
             </div>
             
-            <div class="flex justify-end gap-3">
+            <div class="flex justify-end gap-3 pt-4 border-t border-white/10">
               <button type="button" onclick="closeCompleteModal()" class="btn btn-secondary">Cancelar</button>
-              <button type="submit" class="btn btn-success">
+              <button type="submit" class="btn btn-success shadow-lg shadow-green-500/20">
                 <i class="fas fa-check mr-2"></i> Confirmar Conclusão
               </button>
             </div>

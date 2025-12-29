@@ -10,50 +10,50 @@ async function loadTaskListModule() {
 
   mainContent.innerHTML = `
     <div class="max-w-7xl mx-auto">
-      <h1 class="text-3xl font-bold text-gray-900 mb-8">
-        <i class="fas fa-list mr-3"></i>Todas as Tasks
+      <h1 class="text-3xl font-bold text-white mb-8">
+        <i class="fas fa-list mr-3 text-primary-400"></i>Todas as Tasks
       </h1>
       
       <!-- Filters -->
-      <div class="filter-section">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">
-          <i class="fas fa-filter mr-2"></i>Filtros
+      <div class="filter-section bg-dark-900/50 backdrop-blur-sm border border-white/5 p-6 rounded-2xl mb-8">
+        <h2 class="text-lg font-semibold text-white mb-4">
+          <i class="fas fa-filter mr-2 text-primary-400"></i>Filtros
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div class="form-group">
-            <label class="form-label">Escopo</label>
-            <select id="filterScope" class="form-select">
-              <option value="">Todos</option>
-              ${scopes.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
+            <label class="form-label text-gray-300">Escopo</label>
+            <select id="filterScope" class="form-select bg-dark-800 border-white/10 text-white focus:border-primary-500">
+              <option value="" class="text-gray-900">Todos</option>
+              ${scopes.map(s => `<option value="${s.id}" class="text-gray-900">${s.name}</option>`).join('')}
             </select>
           </div>
           
           <div class="form-group">
-            <label class="form-label">Prioridade</label>
-            <select id="filterPriority" class="form-select">
-              <option value="">Todas</option>
-              <option value="low">Baixa</option>
-              <option value="medium">Média</option>
-              <option value="high">Alta</option>
+            <label class="form-label text-gray-300">Prioridade</label>
+            <select id="filterPriority" class="form-select bg-dark-800 border-white/10 text-white focus:border-primary-500">
+              <option value="" class="text-gray-900">Todas</option>
+              <option value="low" class="text-gray-900">Baixa</option>
+              <option value="medium" class="text-gray-900">Média</option>
+              <option value="high" class="text-gray-900">Alta</option>
             </select>
           </div>
           
           <div class="form-group">
-            <label class="form-label">Complexidade</label>
-            <select id="filterComplexity" class="form-select">
-              <option value="">Todas</option>
-              <option value="easy">Fácil</option>
-              <option value="normal">Normal</option>
-              <option value="hard">Difícil</option>
+            <label class="form-label text-gray-300">Complexidade</label>
+            <select id="filterComplexity" class="form-select bg-dark-800 border-white/10 text-white focus:border-primary-500">
+              <option value="" class="text-gray-900">Todas</option>
+              <option value="easy" class="text-gray-900">Fácil</option>
+              <option value="normal" class="text-gray-900">Normal</option>
+              <option value="hard" class="text-gray-900">Difícil</option>
             </select>
           </div>
           
           <div class="form-group">
-            <label class="form-label">Status</label>
-            <select id="filterStatus" class="form-select">
-              <option value="">Todos</option>
-              <option value="pending">Pendente</option>
-              <option value="completed">Concluída</option>
+            <label class="form-label text-gray-300">Status</label>
+            <select id="filterStatus" class="form-select bg-dark-800 border-white/10 text-white focus:border-primary-500">
+              <option value="" class="text-gray-900">Todos</option>
+              <option value="pending" class="text-gray-900">Pendente</option>
+              <option value="completed" class="text-gray-900">Concluída</option>
             </select>
           </div>
         </div>
@@ -98,9 +98,9 @@ async function loadTasksList(filters = {}) {
 
     if (tasks.length === 0) {
       listContainer.innerHTML = `
-        <div class="card text-center py-12">
-          <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
-          <p class="text-gray-500 text-lg">
+        <div class="card text-center py-12 bg-dark-800/50 border border-white/5">
+          <i class="fas fa-inbox text-6xl text-gray-600 mb-4"></i>
+          <p class="text-gray-400 text-lg">
             Nenhuma task encontrada com os filtros aplicados.
           </p>
         </div>
@@ -109,8 +109,8 @@ async function loadTasksList(filters = {}) {
     }
 
     listContainer.innerHTML = `
-      <div class="mb-4 text-gray-600">
-        Total: <strong>${tasks.length}</strong> task${tasks.length !== 1 ? 's' : ''}
+      <div class="mb-4 text-gray-400">
+        Total: <strong class="text-white">${tasks.length}</strong> task${tasks.length !== 1 ? 's' : ''}
       </div>
       <div class="grid grid-cols-1 gap-4">
         ${tasks.map(task => createTaskCard(task)).join('')}
@@ -118,7 +118,7 @@ async function loadTasksList(filters = {}) {
     `;
   } catch (error) {
     listContainer.innerHTML = `
-      <div class="card text-center text-red-500">
+      <div class="card text-center text-red-400 bg-red-900/10 border border-red-500/20">
         <i class="fas fa-exclamation-triangle text-4xl mb-4"></i>
         <p>Erro ao carregar tasks.</p>
       </div>
@@ -130,41 +130,41 @@ function createTaskCard(task) {
   const isOverdue = !task.completed_at && new Date(task.due_date) < new Date();
 
   return `
-    <div class="card ${isOverdue ? 'border-l-4 border-red-500' : ''}">
+    <div class="card bg-dark-800/80 hover:bg-dark-800 transition-colors border-white/5 hover:border-primary-500/30 ${isOverdue ? 'border-l-4 border-l-red-500' : 'border-l-4 border-l-primary-500'}">
       <div class="flex flex-col md:flex-row gap-4">
         <!-- Main Info -->
         <div class="flex-1">
           <div class="flex items-start justify-between mb-3">
             <div class="flex-1">
-              <h3 class="text-xl font-bold text-gray-900 mb-2">
+              <h3 class="text-xl font-bold text-white mb-2">
                 ${task.name}
               </h3>
               <div class="flex flex-wrap gap-2">
                 ${getPriorityBadge(task.priority)}
                 ${getComplexityBadge(task.complexity)}
                 ${getStatusBadge(task)}
-                ${task.scope_name ? `<span class="badge" style="background-color: #dbeafe; color: #1e40af;"><i class="fas fa-folder mr-1"></i>${task.scope_name}</span>` : ''}
+                ${task.scope_name ? `<span class="badge bg-primary-900/30 text-primary-300 border border-primary-500/30"><i class="fas fa-folder mr-1"></i>${task.scope_name}</span>` : ''}
               </div>
             </div>
             <span class="text-sm text-gray-500 font-mono">#${task.id}</span>
           </div>
           
           ${task.description_problem ? `
-            <p class="text-sm text-gray-600 mb-2">
-              <i class="fas fa-bug mr-1"></i>
+            <p class="text-sm text-gray-400 mb-2">
+              <i class="fas fa-bug mr-1 text-red-400"></i>
               ${task.description_problem.substring(0, 150)}${task.description_problem.length > 150 ? '...' : ''}
             </p>
           ` : ''}
           
           <div class="flex flex-wrap gap-4 text-sm mt-3">
-            <div class="flex items-center ${isOverdue ? 'text-red-600 font-bold' : 'text-gray-600'}">
+            <div class="flex items-center ${isOverdue ? 'text-red-400 font-bold' : 'text-gray-400'}">
               <i class="fas fa-calendar mr-2"></i>
               ${formatDate(task.due_date)}
               ${!task.completed_at ? `<span class="ml-2">(${getDaysUntilDue(task.due_date)})</span>` : ''}
             </div>
             ${task.screenshot_count > 0 ? `
-              <div class="text-gray-600">
-                <i class="fas fa-images mr-2"></i>
+              <div class="text-gray-400">
+                <i class="fas fa-images mr-2 text-primary-400"></i>
                 ${task.screenshot_count} screenshot${task.screenshot_count !== 1 ? 's' : ''}
               </div>
             ` : ''}
@@ -223,12 +223,12 @@ async function viewTask(taskId) {
 
     // Create modal
     const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+    modal.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4';
     modal.innerHTML = `
-      <div class="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6">
-        <div class="flex justify-between items-start mb-4">
-          <h2 class="text-2xl font-bold text-gray-900">${task.name}</h2>
-          <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700">
+      <div class="bg-dark-900 border-2 border-white/10 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-8 shadow-2xl">
+        <div class="flex justify-between items-start mb-6">
+          <h2 class="text-2xl font-bold text-white">${task.name}</h2>
+          <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-white transition-colors">
             <i class="fas fa-times text-2xl"></i>
           </button>
         </div>
@@ -257,8 +257,8 @@ async function viewTask(taskId) {
           
           ${task.description_problem ? `
             <div>
-              <strong class="text-gray-700 block mb-2">Descrição do Problema:</strong>
-              <div class="bg-gray-50 p-3 rounded">${task.description_problem}</div>
+              <strong class="text-gray-300 block mb-2">Descrição do Problema:</strong>
+              <div class="bg-dark-800 p-4 rounded-xl text-gray-300 border border-white/5">${task.description_problem}</div>
             </div>
           ` : ''}
           
@@ -270,9 +270,9 @@ async function viewTask(taskId) {
           ` : ''}
 
           ${task.resolution_notes ? `
-            <div class="bg-green-50 border border-green-200 p-4 rounded-lg">
-              <strong class="text-green-800 block mb-2"><i class="fas fa-check-circle mr-2"></i>Notas de Resolução:</strong>
-              <div class="text-green-900">${task.resolution_notes}</div>
+            <div class="bg-green-900/20 border border-green-500/30 p-4 rounded-xl">
+              <strong class="text-green-400 block mb-2"><i class="fas fa-check-circle mr-2"></i>Notas de Resolução:</strong>
+              <div class="text-green-200">${task.resolution_notes}</div>
             </div>
           ` : ''}
           
@@ -321,36 +321,38 @@ function editTask(taskId) {
 async function completeTask(taskId) {
   // Create modal for completion details
   const modalHtml = `
-    <div id="completeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 overflow-hidden">
-        <div class="bg-green-600 px-6 py-4 flex justify-between items-center">
-          <h3 class="text-xl font-bold text-white">Concluir Task #${taskId}</h3>
-          <button onclick="closeCompleteModal()" class="text-white hover:text-gray-200">
+    <div id="completeModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+      <div class="bg-dark-900 border-2 border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
+        <div class="bg-green-900/30 border-b border-green-500/30 px-6 py-4 flex justify-between items-center">
+          <h3 class="text-xl font-bold text-green-400">Concluir Task #${taskId}</h3>
+          <button onclick="closeCompleteModal()" class="text-green-400 hover:text-white transition-colors">
             <i class="fas fa-times"></i>
           </button>
         </div>
-        <div class="p-6">
+        <div class="p-8">
           <form id="completeForm" onsubmit="submitComplete(event, ${taskId})">
-            <div class="mb-4">
-              <label class="block text-gray-700 font-bold mb-2">Como foi resolvido? *</label>
-              <textarea name="resolution_notes" rows="4" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" required placeholder="Descreva a solução aplicada..."></textarea>
+            <div class="mb-6">
+              <label class="block text-gray-300 font-bold mb-2">Como foi resolvido? *</label>
+              <textarea name="resolution_notes" rows="4" class="form-textarea bg-dark-800 border-white/10 text-white focus:border-green-500" required placeholder="Descreva a solução aplicada..."></textarea>
             </div>
             
-            <div class="mb-6">
-              <label class="block text-gray-700 font-bold mb-2">Screenshot da Solução (Opcional)</label>
-              <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer" onclick="document.getElementById('solutionScreenshot').click()">
-                <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
-                <p class="text-gray-500">Clique para fazer upload da imagem</p>
+            <div class="mb-8">
+              <label class="block text-gray-300 font-bold mb-2">Screenshot da Solução (Opcional)</label>
+              <div class="border-2 border-dashed border-white/10 rounded-xl p-8 text-center hover:bg-white/5 transition-colors cursor-pointer group" onclick="document.getElementById('solutionScreenshot').click()">
+                <div class="w-12 h-12 bg-dark-800 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                     <i class="fas fa-cloud-upload-alt text-xl text-green-400"></i>
+                </div>
+                <p class="text-gray-400 font-medium group-hover:text-white transition-colors">Clique para fazer upload da imagem</p>
                 <input type="file" id="solutionScreenshot" name="screenshot" class="hidden" accept="image/*" onchange="previewSolutionImage(this)">
               </div>
               <div id="solutionPreview" class="mt-4 hidden">
-                <img src="" alt="Preview" class="max-h-48 rounded-lg border border-gray-200 mx-auto">
+                <img src="" alt="Preview" class="max-h-48 rounded-xl border border-white/10 mx-auto shadow-lg">
               </div>
             </div>
             
-            <div class="flex justify-end gap-3">
+            <div class="flex justify-end gap-3 pt-4 border-t border-white/10">
               <button type="button" onclick="closeCompleteModal()" class="btn btn-secondary">Cancelar</button>
-              <button type="submit" class="btn btn-success">
+              <button type="submit" class="btn btn-success shadow-lg shadow-green-500/20">
                 <i class="fas fa-check mr-2"></i> Confirmar Conclusão
               </button>
             </div>
