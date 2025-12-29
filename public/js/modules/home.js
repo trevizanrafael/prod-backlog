@@ -157,44 +157,70 @@ async function loadHomeModule() {
 
     if (isSuperUser) {
       sqlPlaygroundHtml = `
-            <div class="card bg-gray-800 text-white mb-8 border border-gray-700">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-bold flex items-center text-blue-400">
-                        <i class="fas fa-database mr-2"></i>
-                        SQL Playground
-                    </h2>
-                    <span class="text-xs bg-red-600 text-white px-2 py-1 rounded">CUIDADO: Acesso Direto</span>
-                </div>
+            <div class="relative mb-8 rounded-2xl overflow-hidden shadow-2xl" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid rgba(59, 130, 246, 0.3);">
+                <!-- Animated background effect -->
+                <div class="absolute inset-0 opacity-10" style="background: radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.3) 0%, transparent 50%), radial-gradient(circle at 80% 50%, rgba(124, 58, 237, 0.3) 0%, transparent 50%);"></div>
                 
-                <div class="mb-4">
-                    <div class="flex gap-4 mb-2">
-                        <div class="w-1/4">
-                            <label class="block text-xs text-gray-400 mb-1">Operação</label>
-                            <select id="sqlOperation" class="w-full bg-gray-700 border-gray-600 text-white rounded p-2 focus:border-blue-500" onchange="handleSqlOperationChange(this)">
-                                <option value="SELECT">SELECT</option>
-                                <option value="UPDATE">UPDATE</option>
-                                <option value="DELETE">DELETE</option>
-                            </select>
-                        </div>
-                        <div class="w-3/4">
-                            <label class="block text-xs text-gray-400 mb-1">Query SQL</label>
-                            <div class="relative">
-                                <textarea id="sqlQuery" rows="3" class="w-full bg-gray-900 border-gray-700 text-green-400 font-mono text-sm rounded p-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="SELECT * FROM users"></textarea>
+                <div class="relative p-6">
+                    <!-- Header -->
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/50">
+                                <i class="fas fa-database text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-white">
+                                    SQL Playground
+                                </h2>
+                                <p class="text-xs text-gray-400 mt-0.5">Controle direto do banco de dados</p>
                             </div>
                         </div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-3 py-1.5 text-xs font-bold bg-gradient-to-r from-red-600 to-red-700 text-white rounded-full shadow-lg shadow-red-500/50 animate-pulse">
+                                <i class="fas fa-exclamation-triangle mr-1"></i>RISCO ALTO
+                            </span>
+                        </div>
                     </div>
-                    <div class="flex justify-end">
-                        <button onclick="executeSql()" class="btn btn-primary bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 text-sm">
-                            <i class="fas fa-play mr-2"></i> Executar Scrip
-                        </button>
+                    
+                    <!-- Query Interface -->
+                    <div class="bg-black/30 backdrop-blur-sm rounded-xl p-5 border border-gray-700/50 shadow-inner mb-4">
+                        <div class="flex gap-4 mb-4">
+                            <div class="w-1/4">
+                                <label class="block text-xs font-semibold text-gray-300 mb-2 uppercase tracking-wide">Operação</label>
+                                <select id="sqlOperation" class="w-full bg-gray-800/80 border-2 border-gray-600 text-white rounded-lg p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 font-medium" onchange="handleSqlOperationChange(this)">
+                                    <option value="SELECT">📊 SELECT</option>
+                                    <option value="UPDATE">✏️ UPDATE</option>
+                                    <option value="DELETE">🗑️ DELETE</option>
+                                </select>
+                            </div>
+                            <div class="w-3/4">
+                                <label class="block text-xs font-semibold text-gray-300 mb-2 uppercase tracking-wide">Query SQL</label>
+                                <div class="relative">
+                                    <textarea id="sqlQuery" rows="4" class="w-full bg-gray-900 border-2 border-gray-700 text-green-400 font-mono text-sm rounded-lg p-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 shadow-inner" placeholder="SELECT * FROM users LIMIT 10;"></textarea>
+                                    <div class="absolute top-2 right-2 text-xs text-gray-600">
+                                        <i class="fas fa-code"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-end">
+                            <button onclick="executeSql()" class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-semibold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-200 transform hover:scale-105 active:scale-95">
+                                <i class="fas fa-play mr-2"></i> Executar Script
+                            </button>
+                        </div>
                     </div>
-                </div>
-                
-                <!-- Results Area -->
-                <div id="sqlResults" class="hidden mt-4 border-t border-gray-700 pt-4">
-                    <h3 class="text-sm font-semibold text-gray-400 mb-2">Resultado:</h3>
-                    <div class="overflow-x-auto bg-gray-900 rounded p-2 max-h-60 overflow-y-auto">
-                        <div id="sqlOutput" class="text-xs font-mono"></div>
+                    
+                    <!-- Results Area -->
+                    <div id="sqlResults" class="hidden">
+                        <div class="bg-gray-900/50 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
+                            <div class="flex items-center gap-2 mb-3">
+                                <i class="fas fa-chart-bar text-blue-400"></i>
+                                <h3 class="text-sm font-bold text-gray-200 uppercase tracking-wide">Resultado</h3>
+                            </div>
+                            <div class="overflow-x-auto bg-black/40 rounded-lg p-3 max-h-72 overflow-y-auto border border-gray-800">
+                                <div id="sqlOutput" class="text-xs font-mono"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -237,32 +263,83 @@ function handleSqlOperationChange(selectInfo) {
 
   if (operation === 'UPDATE' || operation === 'DELETE') {
     const modalHtml = `
-            <div id="sqlWarningModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
-                <div class="bg-gray-800 border border-red-600 rounded-lg shadow-2xl max-w-md w-full p-6 text-white">
-                    <div class="flex items-center mb-4">
-                        <div class="bg-red-900/50 rounded-full p-3 mr-4">
-                            <i class="fas fa-exclamation-triangle text-red-500 text-2xl"></i>
+            <div id="sqlWarningModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in" style="background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(4px);">
+                <div class="relative max-w-lg w-full rounded-2xl overflow-hidden shadow-2xl animate-scale-in" style="background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%); border: 2px solid #dc2626;">
+                    <!-- Animated danger stripes in background -->
+                    <div class="absolute inset-0 opacity-10" style="background: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(220, 38, 38, 0.3) 35px, rgba(220, 38, 38, 0.3) 70px);"></div>
+                    
+                    <!-- Glowing border effect -->
+                    <div class="absolute inset-0 opacity-30 animate-pulse" style="box-shadow: inset 0 0 30px rgba(220, 38, 38, 0.5);"></div>
+                    
+                    <div class="relative p-8">
+                        <!-- Icon Header -->
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="relative">
+                                <div class="absolute inset-0 bg-red-600 rounded-full blur-xl opacity-50 animate-pulse"></div>
+                                <div class="relative bg-gradient-to-br from-red-600 to-red-700 rounded-full p-4 shadow-xl">
+                                    <i class="fas fa-exclamation-triangle text-white text-3xl"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-bold text-white mb-1">⚠️ Atenção Extrema!</h3>
+                                <p class="text-red-300 text-sm font-medium">Operação Destrutiva Detectada</p>
+                            </div>
                         </div>
-                        <h3 class="text-xl font-bold text-red-400">Atenção Extrema!</h3>
-                    </div>
-                    <p class="text-gray-300 mb-4">
-                        Você selecionou uma operação destrutiva (<strong>${operation}</strong>).
-                        <br><br>
-                        Alterações diretas no banco de dados são irreversíveis e podem corromper o sistema se não feitas com cuidado.
-                    </p>
-                    <div class="bg-red-900/30 p-3 rounded mb-6 border border-red-800 text-red-200 text-sm">
-                        Certifique-se de usar a cláusula <code>WHERE</code> para não afetar todos os registros!
-                    </div>
-                    <div class="flex justify-end gap-3">
-                        <button onclick="document.getElementById('sqlOperation').value='SELECT'; document.getElementById('sqlWarningModal').remove()" class="px-4 py-2 rounded text-gray-300 hover:text-white hover:bg-gray-700">
-                            Cancelar (Voltar para SELECT)
-                        </button>
-                        <button onclick="document.getElementById('sqlWarningModal').remove()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 font-bold">
-                            Estou ciente dos riscos
-                        </button>
+                        
+                        <!-- Warning Content -->
+                        <div class="bg-black/40 backdrop-blur-sm rounded-xl p-5 mb-6 border border-red-900/50">
+                            <p class="text-gray-200 leading-relaxed mb-4">
+                                Você selecionou a operação <span class="px-2 py-1 bg-red-600 text-white font-bold rounded">${operation}</span>.
+                            </p>
+                            <p class="text-gray-300 text-sm leading-relaxed">
+                                Alterações diretas no banco de dados são <strong class="text-red-400">irreversíveis</strong> e podem corromper todo o sistema se não executadas corretamente.
+                            </p>
+                        </div>
+                        
+                        <!-- Critical Warning Box -->
+                        <div class="bg-gradient-to-r from-red-900/40 to-orange-900/40 backdrop-blur-sm p-4 rounded-xl mb-6 border-2 border-red-700/50 shadow-lg">
+                            <div class="flex items-start gap-3">
+                                <i class="fas fa-shield-alt text-red-400 text-lg mt-0.5"></i>
+                                <div class="text-red-100 text-sm">
+                                    <p class="font-bold mb-1">Lembre-se:</p>
+                                    <ul class="list-disc list-inside space-y-1 text-xs">
+                                        <li>Sempre use a cláusula <code class="bg-black/50 px-1.5 py-0.5 rounded font-mono text-yellow-300">WHERE</code></li>
+                                        <li>Teste com <code class="bg-black/50 px-1.5 py-0.5 rounded font-mono text-yellow-300">LIMIT 1</code> primeiro</li>
+                                        <li>Verifique os dados com um SELECT antes</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="flex gap-3">
+                            <button onclick="document.getElementById('sqlOperation').value='SELECT'; document.getElementById('sqlWarningModal').remove()" class="flex-1 px-5 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 text-white font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95">
+                                <i class="fas fa-arrow-left mr-2"></i>Cancelar
+                            </button>
+                            <button onclick="document.getElementById('sqlWarningModal').remove()" class="flex-1 px-5 py-3 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold transition-all duration-200 shadow-lg shadow-red-500/50 hover:shadow-red-500/70 transform hover:scale-105 active:scale-95">
+                                <i class="fas fa-check mr-2"></i>Ciente dos Riscos
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
+            
+            <style>
+                @keyframes fade-in {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes scale-in {
+                    from { transform: scale(0.9); opacity: 0; }
+                    to { transform: scale(1); opacity: 1; }
+                }
+                .animate-fade-in {
+                    animation: fade-in 0.2s ease-out;
+                }
+                .animate-scale-in {
+                    animation: scale-in 0.3s ease-out;
+                }
+            </style>
         `;
     document.body.insertAdjacentHTML('beforeend', modalHtml);
   }
