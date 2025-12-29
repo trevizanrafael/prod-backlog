@@ -1,0 +1,15 @@
+# Dependências (Nunca envie isso, é muito pesado)
+node_modules/
+
+# Arquivos de ambiente (SEGURANÇA: nunca suba senhas/chaves)
+.env
+
+# Logs de erro e debug
+*.log
+npm-debug.log*
+
+
+
+# Arquivos de Sistema Operacional
+.DS_Store
+Thumbs.db

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoodTech - Backlog Management</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/assets/logo.png">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0066cc',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Chart.js for dashboards -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/styles.css">
+
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body class="bg-gray-50 transition-colors duration-300">
+
+    <!-- Sidebar -->
+    <aside id="sidebar"
+        class="fixed left-0 top-0 h-screen w-64 bg-white shadow-lg z-50 flex flex-col transition-colors duration-300">
+        <!-- Logo -->
+        <div class="p-6 border-b border-gray-200">
+            <h1 class="text-3xl font-bold text-center"
+                style="color: #0066cc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+                Food<span style="font-weight: 900;">Tech</span>
+            </h1>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex-1 overflow-y-auto py-6">
+            <ul class="space-y-2 px-4">
+                <li>
+                    <a href="#" data-module="home"
+                        class="nav-link flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg transition-colors">
+                        <i class="fas fa-home w-6"></i>
+                        <span class="ml-3 font-medium">Home</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" data-module="tasks"
+                        class="nav-link flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg transition-colors">
+                        <i class="fas fa-plus-circle w-6"></i>
+                        <span class="ml-3 font-medium">Nova Task</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" data-module="scopes"
+                        class="nav-link flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg transition-colors">
+                        <i class="fas fa-folder-plus w-6"></i>
+                        <span class="ml-3 font-medium">Novo Escopo</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" data-module="task-list"
+                        class="nav-link flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg transition-colors">
+                        <i class="fas fa-list w-6"></i>
+                        <span class="ml-3 font-medium">Todas as Tasks</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" data-module="dashboard"
+                        class="nav-link flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg transition-colors">
+                        <i class="fas fa-chart-line w-6"></i>
+                        <span class="ml-3 font-medium">Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" data-module="users" id="nav-users"
+                        class="nav-link flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg transition-colors hidden">
+                        <i class="fas fa-users w-6"></i>
+                        <span class="ml-3 font-medium">Usuários</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" data-module="roles" id="nav-roles"
+                        class="nav-link flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg transition-colors hidden">
+                        <i class="fas fa-user-shield w-6"></i>
+                        <span class="ml-3 font-medium">Tipos de Usuários</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" data-module="settings"
+                        class="nav-link flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg transition-colors">
+                        <i class="fas fa-cog w-6"></i>
+                        <span class="ml-3 font-medium">Configurações</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- External Links -->
+        <div class="p-4 border-t border-gray-200">
+            <div class="flex justify-around">
+                <a href="https://chat.openai.com" target="_blank" rel="noopener noreferrer"
+                    class="flex items-center justify-center w-12 h-12 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                    title="ChatGPT">
+                    <i class="fas fa-robot"></i>
+                </a>
+                <a href="https://github.com" target="_blank" rel="noopener noreferrer"
+                    class="flex items-center justify-center w-12 h-12 bg-gray-800 hover:bg-gray-900 text-white rounded-lg transition-colors"
+                    title="GitHub">
+                    <i class="fab fa-github"></i>
+                </a>
+                <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer"
+                    class="flex items-center justify-center w-12 h-12 bg-blue-700 hover:bg-blue-800 text-white rounded-lg transition-colors"
+                    title="LinkedIn">
+                    <i class="fab fa-linkedin-in"></i>
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main id="mainContent" class="ml-64 min-h-screen p-8">
+        <!-- Content will be dynamically loaded here -->
+    </main>
+
+    <!-- Scripts -->
+    <script src="/js/app.js"></script>
+    <script src="/js/modules/home.js"></script>
+    <script src="/js/modules/tasks.js"></script>
+    <script src="/js/modules/scopes.js"></script>
+    <script src="/js/modules/task-list.js"></script>
+    <script src="/js/modules/dashboard.js"></script>
+    <script src="/js/modules/users.js"></script>
+    <script src="/js/modules/roles.js"></script>
+    <script src="/js/modules/settings.js"></script>
+</body>
+
+</html>
