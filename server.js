@@ -638,6 +638,35 @@ app.get('/api/tasks/priority/top', async (req, res) => {
     }
 });
 
+// Execute raw SQL (SuperUser only)
+app.post('/api/admin/sql', authenticateToken, async (req, res) => {
+    try {
+        // Double check if user is SuperUser or Admin
+        if (req.user.username !== 'SuperUser' && req.user.role !== 'Admin') {
+            return res.status(403).json({ error: 'Unauthorized. SuperUser/Admin access required.' });
+        }
+
+        const { query } = req.body;
+
+        if (!query) {
+            return res.status(400).json({ error: 'SQL query is required' });
+        }
+
+        // Execute query
+        const result = await db.query(query);
+
+        // Return results depending on query type (SELECT returns rows, others return rowCount)
+        res.json({
+            rows: result.rows,
+            rowCount: result.rowCount,
+            command: result.command
+        });
+    } catch (error) {
+        console.error('SQL Execution Error:', error);
+        res.status(400).json({ error: error.message });
+    }
+});
+
 // ==================== SERVER INITIALIZATION ====================
 
 // Initialize server

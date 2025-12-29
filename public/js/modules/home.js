@@ -1,8 +1,6 @@
 // Home Module - Shows priority task and Time Tracker
 
-let activeTimer = null;
-let timerInterval = null;
-let currentTaskTime = 0;
+// Home Module - Shows priority task and SQL Playground (for SuperUser)
 
 async function loadHomeModule() {
   const mainContent = document.getElementById('mainContent');
@@ -10,8 +8,11 @@ async function loadHomeModule() {
   try {
     // Fetch priority task
     const task = await apiGet('/tasks/priority/top');
-    // Fetch all pending tasks for the timer dropdown
-    const allTasks = await apiGet('/tasks?status=pending');
+
+    // Get current user for SQL Playground check
+    const userJson = localStorage.getItem('user');
+    const user = userJson ? JSON.parse(userJson) : null;
+    const isSuperUser = user && (user.username === 'SuperUser' || user.role === 'Admin');
 
     let priorityTaskHtml = '';
 
@@ -151,43 +152,80 @@ async function loadHomeModule() {
         </div>`;
     }
 
-    // Time Tracker HTML
-    const timeTrackerHtml = `
-      <div class="card bg-gray-800 text-white mb-8">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-2xl font-bold flex items-center">
-            <i class="fas fa-stopwatch mr-3 text-yellow-400"></i>
-            Time Tracker
-          </h2>
-          <div id="timerDisplay" class="text-4xl font-mono font-bold text-yellow-400">
-            00:00:00
-          </div>
-        </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="md:col-span-2">
-            <label class="block text-sm font-medium text-gray-300 mb-1">Selecione a Task</label>
-            <select id="timerTaskSelect" class="w-full bg-gray-700 border-gray-600 text-white rounded-lg focus:ring-yellow-400 focus:border-yellow-400" ${activeTimer ? 'disabled' : ''}>
-              <option value="">Selecione uma task para iniciar...</option>
-              ${allTasks.map(t => `<option value="${t.id}" ${activeTimer === t.id ? 'selected' : ''}>#${t.id} - ${t.name}</option>`).join('')}
-            </select>
-          </div>
-          <div class="flex items-end gap-2">
-            <button id="startTimerBtn" onclick="startTimer()" class="btn bg-green-600 hover:bg-green-700 text-white flex-1 ${activeTimer ? 'hidden' : ''}">
-              <i class="fas fa-play mr-2"></i> Iniciar
-            </button>
-            <button id="stopTimerBtn" onclick="stopTimer()" class="btn bg-red-600 hover:bg-red-700 text-white flex-1 ${!activeTimer ? 'hidden' : ''}">
-              <i class="fas fa-stop mr-2"></i> Parar
-            </button>
-          </div>
-        </div>
-        
-        <div id="activeTaskInfo" class="mt-4 text-sm text-gray-400 ${!activeTimer ? 'hidden' : ''}">
-          <i class="fas fa-info-circle mr-2"></i>
-          Trabalhando na task <span class="font-bold text-white" id="activeTaskName"></span>
-        </div>
-      </div>
-    `;
+    // SQL Playground HTML (Only for SuperUser)
+    let sqlPlaygroundHtml = '';
+
+    if (isSuperUser) {
+      sqlPlaygroundHtml = `
+            <div class="relative mb-8 rounded-2xl overflow-hidden shadow-2xl" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid rgba(59, 130, 246, 0.3);">
+                <!-- Animated background effect -->
+                <div class="absolute inset-0 opacity-10" style="background: radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.3) 0%, transparent 50%), radial-gradient(circle at 80% 50%, rgba(124, 58, 237, 0.3) 0%, transparent 50%);"></div>
+                
+                <div class="relative p-6">
+                    <!-- Header -->
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/50">
+                                <i class="fas fa-database text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-white">
+                                    SQL Playground
+                                </h2>
+                                <p class="text-xs text-gray-400 mt-0.5">Controle direto do banco de dados</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-3 py-1.5 text-xs font-bold bg-gradient-to-r from-red-600 to-red-700 text-white rounded-full shadow-lg shadow-red-500/50 animate-pulse">
+                                <i class="fas fa-exclamation-triangle mr-1"></i>RISCO ALTO
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- Query Interface -->
+                    <div class="bg-black/30 backdrop-blur-sm rounded-xl p-5 border border-gray-700/50 shadow-inner mb-4">
+                        <div class="flex gap-4 mb-4">
+                            <div class="w-1/4">
+                                <label class="block text-xs font-semibold text-gray-300 mb-2 uppercase tracking-wide">Operação</label>
+                                <select id="sqlOperation" class="w-full bg-gray-800/80 border-2 border-gray-600 text-white rounded-lg p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 font-medium" onchange="handleSqlOperationChange(this)">
+                                    <option value="SELECT">📊 SELECT</option>
+                                    <option value="UPDATE">✏️ UPDATE</option>
+                                    <option value="DELETE">🗑️ DELETE</option>
+                                </select>
+                            </div>
+                            <div class="w-3/4">
+                                <label class="block text-xs font-semibold text-gray-300 mb-2 uppercase tracking-wide">Query SQL</label>
+                                <div class="relative">
+                                    <textarea id="sqlQuery" rows="4" class="w-full bg-gray-900 border-2 border-gray-700 text-green-400 font-mono text-sm rounded-lg p-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 shadow-inner" placeholder="SELECT * FROM users LIMIT 10;"></textarea>
+                                    <div class="absolute top-2 right-2 text-xs text-gray-600">
+                                        <i class="fas fa-code"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-end">
+                            <button onclick="executeSql()" class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-semibold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-200 transform hover:scale-105 active:scale-95">
+                                <i class="fas fa-play mr-2"></i> Executar Script
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Results Area -->
+                    <div id="sqlResults" class="hidden">
+                        <div class="bg-gray-900/50 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
+                            <div class="flex items-center gap-2 mb-3">
+                                <i class="fas fa-chart-bar text-blue-400"></i>
+                                <h3 class="text-sm font-bold text-gray-200 uppercase tracking-wide">Resultado</h3>
+                            </div>
+                            <div class="overflow-x-auto bg-black/40 rounded-lg p-3 max-h-72 overflow-y-auto border border-gray-800">
+                                <div id="sqlOutput" class="text-xs font-mono"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 
     mainContent.innerHTML = `
       <div class="max-w-4xl mx-auto">
@@ -195,7 +233,7 @@ async function loadHomeModule() {
           <i class="fas fa-home mr-3"></i>Home
         </h1>
         
-        ${timeTrackerHtml}
+        ${sqlPlaygroundHtml}
         
         <h2 class="text-xl font-bold text-gray-800 mb-4">
           <i class="fas fa-star mr-2 text-yellow-500"></i>
@@ -205,30 +243,7 @@ async function loadHomeModule() {
       </div>
     `;
 
-    // Restore timer state if active
-    if (activeTimer) {
-      const task = allTasks.find(t => t.id === activeTimer);
-      if (task) {
-        currentTaskTime = task.time_spent || 0;
-        document.getElementById('timerTaskSelect').disabled = true;
-        document.getElementById('startTimerBtn').classList.add('hidden');
-        document.getElementById('stopTimerBtn').classList.remove('hidden');
-        document.getElementById('activeTaskInfo').classList.remove('hidden');
-        document.getElementById('activeTaskName').textContent = `#${task.id} - ${task.name}`;
-        updateTimerDisplay();
-        timerInterval = setInterval(() => {
-          currentTaskTime++;
-          updateTimerDisplay();
-          if (currentTaskTime % 60 === 0) {
-            saveTimer(activeTimer, currentTaskTime);
-          }
-        }, 1000);
-      } else {
-        // If activeTimer task is no longer pending, reset timer
-        activeTimer = null;
-        currentTaskTime = 0;
-      }
-    }
+
 
   } catch (error) {
     console.error(error);
@@ -241,80 +256,160 @@ async function loadHomeModule() {
   }
 }
 
-// Timer Functions
-async function startTimer() {
-  const taskSelect = document.getElementById('timerTaskSelect');
-  const taskId = taskSelect.value;
+// SQL Playground Functions
 
-  if (!taskId) {
-    showNotification('Selecione uma task para iniciar o timer', 'error');
-    return;
+function handleSqlOperationChange(selectInfo) {
+  const operation = selectInfo.value;
+
+  if (operation === 'UPDATE' || operation === 'DELETE') {
+    const modalHtml = `
+            <div id="sqlWarningModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in" style="background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(4px);">
+                <div class="relative max-w-lg w-full rounded-2xl overflow-hidden shadow-2xl animate-scale-in" style="background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%); border: 2px solid #dc2626;">
+                    <!-- Animated danger stripes in background -->
+                    <div class="absolute inset-0 opacity-10" style="background: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(220, 38, 38, 0.3) 35px, rgba(220, 38, 38, 0.3) 70px);"></div>
+                    
+                    <!-- Glowing border effect -->
+                    <div class="absolute inset-0 opacity-30 animate-pulse" style="box-shadow: inset 0 0 30px rgba(220, 38, 38, 0.5);"></div>
+                    
+                    <div class="relative p-8">
+                        <!-- Icon Header -->
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="relative">
+                                <div class="absolute inset-0 bg-red-600 rounded-full blur-xl opacity-50 animate-pulse"></div>
+                                <div class="relative bg-gradient-to-br from-red-600 to-red-700 rounded-full p-4 shadow-xl">
+                                    <i class="fas fa-exclamation-triangle text-white text-3xl"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-bold text-white mb-1">⚠️ Atenção Extrema!</h3>
+                                <p class="text-red-300 text-sm font-medium">Operação Destrutiva Detectada</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Warning Content -->
+                        <div class="bg-black/40 backdrop-blur-sm rounded-xl p-5 mb-6 border border-red-900/50">
+                            <p class="text-gray-200 leading-relaxed mb-4">
+                                Você selecionou a operação <span class="px-2 py-1 bg-red-600 text-white font-bold rounded">${operation}</span>.
+                            </p>
+                            <p class="text-gray-300 text-sm leading-relaxed">
+                                Alterações diretas no banco de dados são <strong class="text-red-400">irreversíveis</strong> e podem corromper todo o sistema se não executadas corretamente.
+                            </p>
+                        </div>
+                        
+                        <!-- Critical Warning Box -->
+                        <div class="bg-gradient-to-r from-red-900/40 to-orange-900/40 backdrop-blur-sm p-4 rounded-xl mb-6 border-2 border-red-700/50 shadow-lg">
+                            <div class="flex items-start gap-3">
+                                <i class="fas fa-shield-alt text-red-400 text-lg mt-0.5"></i>
+                                <div class="text-red-100 text-sm">
+                                    <p class="font-bold mb-1">Lembre-se:</p>
+                                    <ul class="list-disc list-inside space-y-1 text-xs">
+                                        <li>Sempre use a cláusula <code class="bg-black/50 px-1.5 py-0.5 rounded font-mono text-yellow-300">WHERE</code></li>
+                                        <li>Teste com <code class="bg-black/50 px-1.5 py-0.5 rounded font-mono text-yellow-300">LIMIT 1</code> primeiro</li>
+                                        <li>Verifique os dados com um SELECT antes</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="flex gap-3">
+                            <button onclick="document.getElementById('sqlOperation').value='SELECT'; document.getElementById('sqlWarningModal').remove()" class="flex-1 px-5 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 text-white font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95">
+                                <i class="fas fa-arrow-left mr-2"></i>Cancelar
+                            </button>
+                            <button onclick="document.getElementById('sqlWarningModal').remove()" class="flex-1 px-5 py-3 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold transition-all duration-200 shadow-lg shadow-red-500/50 hover:shadow-red-500/70 transform hover:scale-105 active:scale-95">
+                                <i class="fas fa-check mr-2"></i>Ciente dos Riscos
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <style>
+                @keyframes fade-in {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes scale-in {
+                    from { transform: scale(0.9); opacity: 0; }
+                    to { transform: scale(1); opacity: 1; }
+                }
+                .animate-fade-in {
+                    animation: fade-in 0.2s ease-out;
+                }
+                .animate-scale-in {
+                    animation: scale-in 0.3s ease-out;
+                }
+            </style>
+        `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
   }
+}
+
+async function executeSql() {
+  const query = document.getElementById('sqlQuery').value;
+  if (!query) return;
+
+  const btn = document.querySelector('button[onclick="executeSql()"]');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Executando...';
+
+  const resultsArea = document.getElementById('sqlResults');
+  const outputArea = document.getElementById('sqlOutput');
+  resultsArea.classList.add('hidden');
 
   try {
-    const task = await apiGet(`/tasks/${taskId}`);
-    activeTimer = parseInt(taskId);
-    currentTaskTime = task.time_spent || 0;
+    const result = await apiPost('/admin/sql', { query });
 
-    // Update UI
-    document.getElementById('timerTaskSelect').disabled = true;
-    document.getElementById('startTimerBtn').classList.add('hidden');
-    document.getElementById('stopTimerBtn').classList.remove('hidden');
-    document.getElementById('activeTaskInfo').classList.remove('hidden');
-    document.getElementById('activeTaskName').textContent = `#${task.id} - ${task.name}`;
+    resultsArea.classList.remove('hidden');
 
-    // Start interval
-    timerInterval = setInterval(() => {
-      currentTaskTime++;
-      updateTimerDisplay();
-      // Save every minute
-      if (currentTaskTime % 60 === 0) {
-        saveTimer(activeTimer, currentTaskTime);
+    if (result.error) {
+      outputArea.innerHTML = `<span class="text-red-400">Error: ${result.error}</span>`;
+    } else if (result.rows && Array.isArray(result.rows)) {
+      if (result.rows.length === 0) {
+        if (result.command === 'SELECT') {
+          outputArea.innerHTML = '<span class="text-gray-400">Nenhum registro encontrado.</span>';
+        } else {
+          outputArea.innerHTML = `<span class="text-green-400">Comando executado com sucesso. Linhas afetadas: ${result.rowCount}</span>`;
+        }
+      } else {
+        // Render table
+        const keys = Object.keys(result.rows[0]);
+        let tableHtml = '<table class="w-full text-left border-collapse">';
+
+        // Header
+        tableHtml += '<thead><tr>';
+        keys.forEach(key => {
+          tableHtml += `<th class="p-2 border-b border-gray-700 text-gray-400 font-semibold">${key}</th>`;
+        });
+        tableHtml += '</tr></thead>';
+
+        // Body
+        tableHtml += '<tbody>';
+        result.rows.forEach(row => {
+          tableHtml += '<tr class="hover:bg-gray-800">';
+          keys.forEach(key => {
+            let val = row[key];
+            if (typeof val === 'object' && val !== null) val = JSON.stringify(val);
+            tableHtml += `<td class="p-2 border-b border-gray-800 text-gray-300 truncate max-w-xs" title="${val}">${val}</td>`;
+          });
+          tableHtml += '</tr>';
+        });
+        tableHtml += '</tbody></table>';
+
+        outputArea.innerHTML = tableHtml;
       }
-    }, 1000);
+    } else {
+      outputArea.innerHTML = `<span class="text-green-400">Comando executado. ${JSON.stringify(result)}</span>`;
+    }
 
-    showNotification('Timer iniciado!', 'success');
   } catch (error) {
-    showNotification('Erro ao iniciar timer', 'error');
+    resultsArea.classList.remove('hidden');
+    outputArea.innerHTML = `<span class="text-red-400">Erro na requisição: ${error.message}</span>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
   }
-}
-
-async function stopTimer() {
-  if (!activeTimer) return;
-
-  clearInterval(timerInterval);
-  await saveTimer(activeTimer, currentTaskTime);
-
-  activeTimer = null;
-  timerInterval = null;
-
-  // Update UI
-  document.getElementById('timerTaskSelect').disabled = false;
-  document.getElementById('startTimerBtn').classList.remove('hidden');
-  document.getElementById('stopTimerBtn').classList.add('hidden');
-  document.getElementById('activeTaskInfo').classList.add('hidden');
-  document.getElementById('timerTaskSelect').value = '';
-  document.getElementById('timerDisplay').textContent = '00:00:00';
-
-  showNotification('Timer parado e salvo!', 'success');
-}
-
-async function saveTimer(taskId, time) {
-  try {
-    await apiPost(`/tasks/${taskId}/timer`, { time_spent: time });
-  } catch (error) {
-    console.error('Error saving timer:', error);
-  }
-}
-
-function updateTimerDisplay() {
-  const hours = Math.floor(currentTaskTime / 3600);
-  const minutes = Math.floor((currentTaskTime % 3600) / 60);
-  const seconds = currentTaskTime % 60;
-
-  const display = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-  const displayEl = document.getElementById('timerDisplay');
-  if (displayEl) displayEl.textContent = display;
 }
 
 function pad(num) {
@@ -323,10 +418,6 @@ function pad(num) {
 
 // Complete task action
 async function completeTask(taskId) {
-  // Stop timer if running for this task
-  if (activeTimer === taskId) {
-    await stopTimer();
-  }
 
   // Create modal for completion details
   const modalHtml = `
