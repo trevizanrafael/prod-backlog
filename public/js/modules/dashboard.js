@@ -4,8 +4,8 @@ let dashboardCharts = {};
 
 function getChartColors() {
     return {
-        textColor: '#374151', // gray-700
-        gridColor: 'rgba(229, 231, 235, 0.5)', // gray-200
+        textColor: '#e2e8f0', // slate-200
+        gridColor: 'rgba(255, 255, 255, 0.1)', // white/10
     };
 }
 
@@ -14,8 +14,8 @@ async function loadDashboardModule() {
 
     mainContent.innerHTML = `
     <div class="max-w-7xl mx-auto">
-      <h1 class="text-3xl font-bold text-gray-900 mb-8">
-        <i class="fas fa-chart-line mr-3"></i>Dashboard
+      <h1 class="text-3xl font-bold text-white mb-8">
+        <i class="fas fa-chart-line mr-3 text-primary-400"></i>Dashboard
       </h1>
       
       <!-- Stats Cards -->
@@ -26,32 +26,32 @@ async function loadDashboardModule() {
       <!-- Charts Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <!-- Monthly Trend -->
-        <div class="card bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Tendência Mensal</h3>
+        <div class="card bg-dark-800/80 backdrop-blur-sm border border-white/5 p-6 rounded-2xl shadow-xl">
+            <h3 class="text-lg font-semibold text-white mb-4">Tendência Mensal</h3>
             <div class="chart-container">
                 <canvas id="monthlyTrendChart"></canvas>
             </div>
         </div>
 
         <!-- Time by Scope -->
-        <div class="card bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Tempo por Escopo (Horas)</h3>
+        <div class="card bg-dark-800/80 backdrop-blur-sm border border-white/5 p-6 rounded-2xl shadow-xl">
+            <h3 class="text-lg font-semibold text-white mb-4">Tempo por Escopo (Horas)</h3>
             <div class="chart-container">
                 <canvas id="timeByScopeChart"></canvas>
             </div>
         </div>
         
         <!-- Bottlenecks -->
-        <div class="card bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Gargalos (Atraso Médio)</h3>
+        <div class="card bg-dark-800/80 backdrop-blur-sm border border-white/5 p-6 rounded-2xl shadow-xl">
+            <h3 class="text-lg font-semibold text-white mb-4">Gargalos (Atraso Médio)</h3>
             <div class="chart-container">
                 <canvas id="bottlenecksChart"></canvas>
             </div>
         </div>
 
         <!-- Completed by Priority -->
-        <div class="card bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-          <h3 class="text-lg font-semibold text-gray-800 mb-4">
+        <div class="card bg-dark-800/80 backdrop-blur-sm border border-white/5 p-6 rounded-2xl shadow-xl">
+          <h3 class="text-lg font-semibold text-white mb-4">
             Tasks Concluídas por Prioridade
           </h3>
           <div class="chart-container">
@@ -60,8 +60,8 @@ async function loadDashboardModule() {
         </div>
         
         <!-- Tasks by Scope -->
-        <div class="card bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-          <h3 class="text-lg font-semibold text-gray-800 mb-4">
+        <div class="card bg-dark-800/80 backdrop-blur-sm border border-white/5 p-6 rounded-2xl shadow-xl">
+          <h3 class="text-lg font-semibold text-white mb-4">
             Tasks por Escopo
           </h3>
           <div class="chart-container">
@@ -70,8 +70,8 @@ async function loadDashboardModule() {
         </div>
         
         <!-- Tasks by Complexity -->
-        <div class="card bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-          <h3 class="text-lg font-semibold text-gray-800 mb-4">
+        <div class="card bg-dark-800/80 backdrop-blur-sm border border-white/5 p-6 rounded-2xl shadow-xl">
+          <h3 class="text-lg font-semibold text-white mb-4">
             Distribuição por Complexidade
           </h3>
           <div class="chart-container">
@@ -80,8 +80,8 @@ async function loadDashboardModule() {
         </div>
         
         <!-- Completion Rate -->
-        <div class="card lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-          <h3 class="text-lg font-semibold text-gray-800 mb-4">
+        <div class="card lg:col-span-2 bg-dark-800/80 backdrop-blur-sm border border-white/5 p-6 rounded-2xl shadow-xl">
+          <h3 class="text-lg font-semibold text-white mb-4">
             Taxa de Conclusão
           </h3>
           <div class="chart-container">
@@ -127,24 +127,24 @@ function renderStatsCards(stats) {
     const container = document.getElementById('statsCards');
 
     container.innerHTML = `
-    <div class="card stat-card bg-gradient-to-br from-blue-50 to-white">
-      <div class="stat-value text-gray-900">${stats.totalTasks}</div>
-      <div class="stat-label text-gray-600">Total de Tasks</div>
+    <div class="card stat-card bg-dark-800/50 border border-white/5 backdrop-blur-sm rounded-2xl p-6 hover:bg-dark-800 transition-colors">
+      <div class="stat-value text-3xl font-bold text-white mb-1">${stats.totalTasks}</div>
+      <div class="stat-label text-gray-400 text-sm uppercase tracking-wider">Total de Tasks</div>
     </div>
     
-    <div class="card stat-card bg-gradient-to-br from-green-50 to-white">
-      <div class="stat-value text-gray-900">${stats.actuallyCompleted}</div>
-      <div class="stat-label text-gray-600">Tasks Concluídas</div>
+    <div class="card stat-card bg-dark-800/50 border border-white/5 backdrop-blur-sm rounded-2xl p-6 hover:bg-dark-800 transition-colors border-l-4 border-l-green-500">
+      <div class="stat-value text-3xl font-bold text-white mb-1">${stats.actuallyCompleted}</div>
+      <div class="stat-label text-gray-400 text-sm uppercase tracking-wider">Tasks Concluídas</div>
     </div>
     
-    <div class="card stat-card bg-gradient-to-br from-red-50 to-white">
-      <div class="stat-value text-gray-900">${stats.overdueTasks}</div>
-      <div class="stat-label text-gray-600">Tasks Atrasadas</div>
+    <div class="card stat-card bg-dark-800/50 border border-white/5 backdrop-blur-sm rounded-2xl p-6 hover:bg-dark-800 transition-colors border-l-4 border-l-red-500">
+      <div class="stat-value text-3xl font-bold text-white mb-1">${stats.overdueTasks}</div>
+      <div class="stat-label text-gray-400 text-sm uppercase tracking-wider">Tasks Atrasadas</div>
     </div>
     
-    <div class="card stat-card bg-gradient-to-br from-purple-50 to-white">
-      <div class="stat-value text-gray-900">${stats.avgCompletionTime}</div>
-      <div class="stat-label text-gray-600">Dias Médios p/ Conclusão</div>
+    <div class="card stat-card bg-dark-800/50 border border-white/5 backdrop-blur-sm rounded-2xl p-6 hover:bg-dark-800 transition-colors border-l-4 border-l-purple-500">
+      <div class="stat-value text-3xl font-bold text-white mb-1">${stats.avgCompletionTime}</div>
+      <div class="stat-label text-gray-400 text-sm uppercase tracking-wider">Dias Médios p/ Conclusão</div>
     </div>
   `;
 }

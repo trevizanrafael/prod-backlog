@@ -12,28 +12,28 @@ async function loadScopesModule() {
 
   mainContent.innerHTML = `
     <div class="max-w-6xl mx-auto">
-      <h1 class="text-3xl font-bold text-gray-900 mb-8">
-        <i class="fas fa-folder-plus mr-3"></i>Gerenciar Escopos
+      <h1 class="text-3xl font-bold text-white mb-8">
+        <i class="fas fa-folder-plus mr-3 text-primary-400"></i>Gerenciar Escopos
       </h1>
       
       <!-- Create New Scope -->
-      <div class="card mb-8">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">
+      <div class="card mb-8 bg-dark-800/80 backdrop-blur-sm border border-white/5">
+        <h2 class="text-xl font-semibold text-white mb-4">
           Criar Novo Escopo
         </h2>
         <form id="scopeForm" class="space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="form-group">
-              <label class="form-label">
-                <i class="fas fa-tag mr-2"></i>Nome do Escopo *
+              <label class="form-label text-gray-300">
+                <i class="fas fa-tag mr-2 text-primary-400"></i>Nome do Escopo *
               </label>
-              <input type="text" id="scopeName" class="form-input" required placeholder="Ex: Backend, Frontend, DevOps">
+              <input type="text" id="scopeName" class="form-input bg-dark-900 border-white/10 text-white focus:border-primary-500" required placeholder="Ex: Backend, Frontend, DevOps">
             </div>
             <div class="form-group md:col-span-2">
-              <label class="form-label">
-                <i class="fas fa-align-left mr-2"></i>Descrição
+              <label class="form-label text-gray-300">
+                <i class="fas fa-align-left mr-2 text-primary-400"></i>Descrição
               </label>
-              <textarea id="scopeDescription" class="form-textarea" rows="2" placeholder="Descrição opcional do escopo..."></textarea>
+              <textarea id="scopeDescription" class="form-textarea bg-dark-900 border-white/10 text-white focus:border-primary-500" rows="2" placeholder="Descrição opcional do escopo..."></textarea>
             </div>
           </div>
           <button type="submit" class="btn btn-primary">
@@ -43,8 +43,8 @@ async function loadScopesModule() {
       </div>
       
       <!-- Scopes List -->
-      <div class="card">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">
+      <div class="card bg-dark-800/80 backdrop-blur-sm border border-white/5">
+        <h2 class="text-xl font-semibold text-white mb-4">
           Escopos Existentes
         </h2>
         <div id="scopesList"></div>
@@ -67,7 +67,7 @@ async function loadScopesList() {
 
     if (scopes.length === 0) {
       listContainer.innerHTML = `
-        <p class="text-center text-gray-500 py-8">
+        <p class="text-center text-gray-400 py-8">
           Nenhum escopo cadastrado ainda.
         </p>
       `;
@@ -77,9 +77,9 @@ async function loadScopesList() {
     listContainer.innerHTML = `
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         ${scopes.map(scope => `
-          <div class="bg-gray-50 rounded-lg p-4 hover:shadow-md transition-shadow">
+          <div class="bg-dark-900/50 backdrop-blur-sm rounded-xl p-6 border border-white/5 hover:border-primary-500/30 transition-all hover:shadow-lg group">
             <div class="flex justify-between items-start mb-2">
-              <h3 class="font-bold text-lg text-gray-900">
+              <h3 class="font-bold text-lg text-white group-hover:text-primary-400 transition-colors">
                 ${scope.name}
               </h3>
               <span class="text-xs text-gray-500 font-mono">
@@ -87,11 +87,11 @@ async function loadScopesList() {
               </span>
             </div>
             ${scope.description ? `
-              <p class="text-sm text-gray-600 mb-3">
+              <p class="text-sm text-gray-400 mb-4 h-10 overflow-hidden text-ellipsis">
                 ${scope.description}
               </p>
             ` : ''}
-            <div class="text-xs text-gray-500 mb-3">
+            <div class="text-xs text-gray-500 mb-4">
               Criado em: ${formatDate(scope.created_at)}
             </div>
             <div class="flex gap-2">
@@ -108,7 +108,7 @@ async function loadScopesList() {
     `;
   } catch (error) {
     listContainer.innerHTML = `
-      <p class="text-center text-red-500 py-8">
+      <p class="text-center text-red-400 py-8">
         Erro ao carregar escopos.
       </p>
     `;

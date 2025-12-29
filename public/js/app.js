@@ -4,17 +4,12 @@ const API_URL = '/api';
 let currentModule = 'home';
 
 // Initialize application
+// Initialize application
 document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
     initializeNavigation();
     initializeUserInterface();
-
-    // Check if we are on visitor page
-    if (window.location.pathname.includes('visitor.html')) {
-        loadModule('dashboard');
-    } else {
-        loadModule('home');
-    }
+    loadModule('home');
 });
 
 // Authentication Check
@@ -29,11 +24,24 @@ function checkAuth() {
 }
 
 // Initialize User Interface (Sidebar info, Logout)
+// Initialize User Interface (Sidebar info, Logout)
+// Initialize User Interface (Sidebar info, Logout)
 function initializeUserInterface() {
     const userJson = localStorage.getItem('user');
     if (userJson) {
         const user = JSON.parse(userJson);
-        const isVisitor = localStorage.getItem('isVisitor') === 'true';
+
+        // Populate Profile Info in Sidebar
+        const profileName = document.querySelector('.profile-name');
+        const profileRole = document.querySelector('.profile-role');
+        const profileInitials = document.querySelector('.profile-initials');
+
+        if (profileName) profileName.textContent = user.name || user.username || 'Usuário';
+        if (profileRole) profileRole.textContent = user.role || 'Membro';
+        if (profileInitials) {
+            const name = user.name || user.username || 'U';
+            profileInitials.textContent = name.charAt(0).toUpperCase();
+        }
 
         // Show Users tab only for Admin (or SuperUser)
         if (user.role === 'Admin' || user.username === 'SuperUser') {
@@ -48,31 +56,13 @@ function initializeUserInterface() {
             }
         }
 
-        // Visitor specific UI
-        if (isVisitor) {
-            // Hide Home, New Task, New Scope
-            const linksToHide = ['home', 'tasks', 'scopes'];
-            const navLinks = document.querySelectorAll('.nav-link');
 
-            navLinks.forEach(link => {
-                const module = link.getAttribute('data-module');
-                if (linksToHide.includes(module)) {
-                    // Hide the LI parent
-                    if (link.parentElement && link.parentElement.tagName === 'LI') {
-                        link.parentElement.style.display = 'none';
-                    } else {
-                        link.style.display = 'none'; // Fallback
-                    }
-                }
-            });
-        }
     }
 }
 
 function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    localStorage.removeItem('isVisitor');
     window.location.href = '/login.html';
 }
 

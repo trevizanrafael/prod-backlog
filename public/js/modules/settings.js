@@ -2,7 +2,6 @@
 
 async function loadSettingsModule() {
   const mainContent = document.getElementById('mainContent');
-  const isVisitor = localStorage.getItem('isVisitor') === 'true';
 
   // Check if user is SuperUser
   const userJson = localStorage.getItem('user');
@@ -11,17 +10,17 @@ async function loadSettingsModule() {
 
   // Data management section - only for SuperUser
   const dataManagementHtml = isSuperUser ? `
-    <div class="card mb-8">
-      <h2 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">
-        <i class="fas fa-database mr-2"></i>Gerenciamento de Dados
+    <div class="card mb-8 bg-dark-800/80 backdrop-blur-sm border border-white/5">
+      <h2 class="text-xl font-semibold text-white mb-4 border-b border-white/5 pb-2">
+        <i class="fas fa-database mr-2 text-primary-400"></i>Gerenciamento de Dados
       </h2>
       
       <div class="space-y-6">
         <!-- Clear Tasks -->
-        <div class="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-100">
+        <div class="flex items-center justify-between p-4 bg-red-900/20 rounded-xl border border-red-500/30">
           <div>
-            <h3 class="font-bold text-red-800">Apagar Todas as Tasks</h3>
-            <p class="text-sm text-red-600">
+            <h3 class="font-bold text-red-300">Apagar Todas as Tasks</h3>
+            <p class="text-sm text-red-400">
               Esta ação irá remover permanentemente todas as tasks e seus screenshots.
               <br><strong>Esta ação não pode ser desfeita.</strong>
             </p>
@@ -32,10 +31,10 @@ async function loadSettingsModule() {
         </div>
         
         <!-- Clear Scopes -->
-        <div class="flex items-center justify-between p-4 bg-orange-50 rounded-lg border border-orange-100">
+        <div class="flex items-center justify-between p-4 bg-orange-900/20 rounded-xl border border-orange-500/30">
           <div>
-            <h3 class="font-bold text-orange-800">Apagar Todos os Escopos</h3>
-            <p class="text-sm text-orange-600">
+            <h3 class="font-bold text-orange-300">Apagar Todos os Escopos</h3>
+            <p class="text-sm text-orange-400">
               Esta ação irá remover todos os escopos cadastrados.
               <br>As tasks associadas ficarão sem escopo.
             </p>
@@ -46,10 +45,10 @@ async function loadSettingsModule() {
         </div>
 
         <!-- Clear Users -->
-        <div class="flex items-center justify-between p-4 bg-purple-50 rounded-lg border border-purple-100">
+        <div class="flex items-center justify-between p-4 bg-purple-900/20 rounded-xl border border-purple-500/30">
           <div>
-            <h3 class="font-bold text-purple-800">Apagar Todos os Usuários</h3>
-            <p class="text-sm text-purple-600">
+            <h3 class="font-bold text-purple-300">Apagar Todos os Usuários</h3>
+            <p class="text-sm text-purple-400">
               Esta ação irá remover todos os usuários (exceto você e o SuperUser).
               <br><strong>Esta ação não pode ser desfeita.</strong>
             </p>
@@ -64,28 +63,28 @@ async function loadSettingsModule() {
 
   mainContent.innerHTML = `
     <div class="max-w-4xl mx-auto">
-      <h1 class="text-3xl font-bold text-gray-900 mb-8">
-        <i class="fas fa-cog mr-3"></i>Configurações
+      <h1 class="text-3xl font-bold text-white mb-8">
+        <i class="fas fa-cog mr-3 text-primary-400"></i>Configurações
       </h1>
       
       ${dataManagementHtml}
       
-      <div class="card">
-        <h2 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">
-          <i class="fas fa-info-circle mr-2"></i>Sobre
+      <div class="card bg-dark-800/80 backdrop-blur-sm border border-white/5">
+        <h2 class="text-xl font-semibold text-white mb-4 border-b border-white/5 pb-2">
+          <i class="fas fa-info-circle mr-2 text-primary-400"></i>Sobre
         </h2>
-        <div class="text-gray-600">
+        <div class="text-gray-400">
           <p class="mb-2"><strong>FoodTech Backlog Management</strong></p>
           <p class="mb-2">Versão 1.0.0</p>
           <p>Sistema desenvolvido para gerenciamento eficiente de tarefas e backlog.</p>
         </div>
       </div>
-      <div class="card mt-8">
-        <h2 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">
-          <i class="fas fa-sign-out-alt mr-2"></i>Sair
+      <div class="card mt-8 bg-dark-800/80 backdrop-blur-sm border border-white/5">
+        <h2 class="text-xl font-semibold text-white mb-4 border-b border-white/5 pb-2">
+          <i class="fas fa-sign-out-alt mr-2 text-primary-400"></i>Sair
         </h2>
         <div class="flex items-center justify-between">
-          <p class="text-gray-600">Deseja sair da sua conta?</p>
+          <p class="text-gray-400">Deseja sair da sua conta?</p>
           <button onclick="logout()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
             <i class="fas fa-sign-out-alt mr-2"></i>Sair
           </button>

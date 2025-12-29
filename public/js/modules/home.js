@@ -18,15 +18,15 @@ async function loadHomeModule() {
 
     if (!task) {
       priorityTaskHtml = `
-        <div class="card text-center py-12 mb-8">
-          <i class="fas fa-check-circle text-6xl text-green-500 mb-4"></i>
-          <h2 class="text-2xl font-semibold text-gray-700 mb-2">
-            Parabéns! Não há tasks pendentes
+        <div class="card text-center py-12 mb-8 border border-white/5">
+          <i class="fas fa-check-circle text-6xl text-green-500 mb-4 drop-shadow-lg"></i>
+          <h2 class="text-2xl font-semibold text-white mb-2">
+            Parabéns! Nenhuma task pendente
           </h2>
-          <p class="text-gray-500">
+          <p class="text-dark-400">
             Todas as tasks foram concluídas ou não há tasks cadastradas.
           </p>
-          <button onclick="loadModule('tasks')" class="btn btn-primary mt-6">
+          <button onclick="loadModule('tasks')" class="btn btn-primary mt-6 shadow-lg shadow-primary-500/20">
             <i class="fas fa-plus"></i> Criar Nova Task
           </button>
         </div>
@@ -35,11 +35,14 @@ async function loadHomeModule() {
       // Calculate days until due
       const daysInfo = getDaysUntilDue(task.due_date);
       priorityTaskHtml = `
-        <div class="card bg-gradient-to-br from-blue-50 to-white border-2 border-blue-200 mb-8">
+        <div class="card mb-8 relative overflow-hidden group">
+          <!-- Background Gradient Glow -->
+          <div class="absolute -top-24 -right-24 w-64 h-64 bg-primary-600 rounded-full blur-3xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
+          
           <!-- Header -->
-          <div class="flex justify-between items-start mb-6">
+          <div class="flex justify-between items-start mb-6 relative z-10">
             <div class="flex-1">
-              <h2 class="text-2xl font-bold text-gray-900 mb-2">
+              <h2 class="text-2xl font-bold text-white mb-3 tracking-tight">
                 ${task.name}
               </h2>
               <div class="flex flex-wrap gap-2 mb-3">
@@ -49,20 +52,20 @@ async function loadHomeModule() {
               </div>
             </div>
             <div class="text-right">
-              <div class="text-sm text-gray-500 mb-1">ID</div>
-              <div class="text-lg font-mono font-bold text-blue-600">#${task.id}</div>
+              <div class="text-xs text-dark-400 mb-1 uppercase tracking-wider font-bold">ID</div>
+              <div class="text-lg font-mono font-bold text-primary-400">#${task.id}</div>
             </div>
           </div>
           
           <!-- Due Date Info -->
-          <div class="bg-white rounded-lg p-4 mb-6 border-l-4 ${new Date(task.due_date) < new Date() ? 'border-red-500' : 'border-blue-500'}">
+          <div class="bg-dark-900/40 rounded-lg p-4 mb-6 border-l-4 ${new Date(task.due_date) < new Date() ? 'border-red-500' : 'border-primary-500'} backdrop-blur-sm">
             <div class="flex items-center justify-between">
               <div>
-                <i class="fas fa-calendar-alt text-gray-500 mr-2"></i>
-                <span class="font-semibold">Data de Prazo:</span>
-                <span class="ml-2">${formatDate(task.due_date)}</span>
+                <i class="fas fa-calendar-alt text-dark-400 mr-2"></i>
+                <span class="font-semibold text-dark-200">Data de Prazo:</span>
+                <span class="ml-2 text-white">${formatDate(task.due_date)}</span>
               </div>
-              <div class="font-bold ${new Date(task.due_date) < new Date() ? 'text-red-600' : 'text-blue-600'}">
+              <div class="font-bold ${new Date(task.due_date) < new Date() ? 'text-red-400' : 'text-primary-400'}">
                 ${daysInfo}
               </div>
             </div>
@@ -70,61 +73,76 @@ async function loadHomeModule() {
           
           <!-- Scope -->
           ${task.scope_name ? `
+          <!-- Scope -->
+          ${task.scope_name ? `
             <div class="mb-4">
-              <div class="text-sm font-semibold text-gray-700 mb-1">
+              <div class="text-xs font-bold text-dark-400 mb-2 uppercase tracking-wider">
                 <i class="fas fa-folder mr-2"></i>Escopo
               </div>
-              <div class="bg-blue-100 text-blue-800 px-3 py-2 rounded-md inline-block">
+              <div class="bg-primary-500/10 border border-primary-500/20 text-primary-300 px-3 py-2 rounded-lg inline-block text-sm font-medium">
                 ${task.scope_name}
               </div>
             </div>
           ` : ''}
+          ` : ''}
           
           <!-- Problem Description -->
           ${task.description_problem ? `
-            <div class="mb-4">
-              <div class="text-sm font-semibold text-gray-700 mb-2">
+          <!-- Problem Description -->
+          ${task.description_problem ? `
+            <div class="mb-6">
+              <div class="text-xs font-bold text-dark-400 mb-2 uppercase tracking-wider">
                 <i class="fas fa-exclamation-circle mr-2"></i>Descrição do Problema
               </div>
-              <div class="bg-gray-50 p-4 rounded-lg text-gray-700">
+              <div class="bg-dark-900/50 p-4 rounded-xl text-gray-300 border border-white/5 leading-relaxed text-sm">
                 ${task.description_problem}
               </div>
             </div>
           ` : ''}
+          ` : ''}
           
           <!-- Solution Description -->
           ${task.description_solution ? `
-            <div class="mb-4">
-              <div class="text-sm font-semibold text-gray-700 mb-2">
+          <!-- Solution Description -->
+          ${task.description_solution ? `
+            <div class="mb-6">
+              <div class="text-xs font-bold text-dark-400 mb-2 uppercase tracking-wider">
                 <i class="fas fa-lightbulb mr-2"></i>Como Resolver
               </div>
-              <div class="bg-gray-50 p-4 rounded-lg text-gray-700">
+              <div class="bg-primary-900/10 p-4 rounded-xl text-gray-300 border border-primary-500/10 leading-relaxed text-sm">
                 ${task.description_solution}
               </div>
             </div>
           ` : ''}
+          ` : ''}
           
           <!-- Screenshots -->
           ${task.screenshots && task.screenshots.length > 0 ? `
+          <!-- Screenshots -->
+          ${task.screenshots && task.screenshots.length > 0 ? `
             <div class="mb-6">
-              <div class="text-sm font-semibold text-gray-700 mb-2">
+              <div class="text-xs font-bold text-dark-400 mb-3 uppercase tracking-wider">
                 <i class="fas fa-images mr-2"></i>Screenshots (${task.screenshots.length})
               </div>
-              <div class="flex flex-wrap gap-3">
+              <div class="flex flex-wrap gap-4">
                 ${task.screenshots.map(s => `
-                  <a href="${s.path}" target="_blank" class="block">
-                    <img src="${s.path}" alt="Screenshot" class="w-32 h-32 object-cover rounded-lg border-2 border-gray-200 hover:border-blue-500 transition-colors cursor-pointer">
+                  <a href="${s.path}" target="_blank" class="block group relative overflow-hidden rounded-xl">
+                    <div class="absolute inset-0 bg-primary-500/20 opacity-0 group-hover:opacity-100 transition-opacity z-10 flex items-center justify-center">
+                        <i class="fas fa-external-link-alt text-white"></i>
+                    </div>
+                    <img src="${s.path}" alt="Screenshot" class="w-32 h-32 object-cover border-2 border-white/5 group-hover:border-primary-500 transition-all transform group-hover:scale-110">
                   </a>
                 `).join('')}
               </div>
             </div>
           ` : ''}
+          ` : ''}
           
           <!-- Timestamps -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
-            <div class="text-sm">
-              <span class="text-gray-500">Criada em:</span>
-              <span class="ml-2 font-medium">${formatDateTime(task.created_at)}</span>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6 border-t border-white/5">
+            <div class="text-xs text-dark-400">
+              <span class="uppercase tracking-wider font-bold">Criada em:</span>
+              <span class="ml-2 font-mono text-dark-300">${formatDateTime(task.created_at)}</span>
             </div>
             ${task.completed_at ? `
               <div class="text-sm">
@@ -135,7 +153,7 @@ async function loadHomeModule() {
           </div>
           
           <!-- Actions -->
-          <div class="flex gap-3 mt-6 pt-6 border-t border-gray-200">
+          <div class="flex gap-4 mt-6 pt-6 border-t border-white/5">
             ${!task.completed_at ? `
               <button onclick="completeTask(${task.id})" class="btn btn-success flex-1">
                 <i class="fas fa-check"></i> Marcar como Concluída
@@ -228,15 +246,18 @@ async function loadHomeModule() {
     }
 
     mainContent.innerHTML = `
-      <div class="max-w-4xl mx-auto">
-        <h1 class="text-3xl font-bold text-gray-900 mb-6">
-          <i class="fas fa-home mr-3"></i>Home
+      <div class="max-w-5xl mx-auto animate-fade-in">
+        <h1 class="text-3xl font-bold text-white mb-8 flex items-center gap-3">
+          <div class="p-2 bg-primary-500/10 rounded-lg">
+             <i class="fas fa-home text-primary-400"></i>
+          </div>
+          Home
         </h1>
         
         ${sqlPlaygroundHtml}
         
-        <h2 class="text-xl font-bold text-gray-800 mb-4">
-          <i class="fas fa-star mr-2 text-yellow-500"></i>
+        <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
+          <i class="fas fa-star text-yellow-500 animate-pulse"></i>
           Task Prioritária
         </h2>
         ${priorityTaskHtml}
@@ -421,36 +442,38 @@ async function completeTask(taskId) {
 
   // Create modal for completion details
   const modalHtml = `
-    <div id="completeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 overflow-hidden">
-        <div class="bg-green-600 px-6 py-4 flex justify-between items-center">
-          <h3 class="text-xl font-bold text-white">Concluir Task #${taskId}</h3>
-          <button onclick="closeCompleteModal()" class="text-white hover:text-gray-200">
+    <div id="completeModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+      <div class="bg-dark-900 border-2 border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
+        <div class="bg-green-900/30 border-b border-green-500/30 px-6 py-4 flex justify-between items-center">
+          <h3 class="text-xl font-bold text-green-400">Concluir Task #${taskId}</h3>
+          <button onclick="closeCompleteModal()" class="text-green-400 hover:text-white transition-colors">
             <i class="fas fa-times"></i>
           </button>
         </div>
-        <div class="p-6">
+        <div class="p-8">
           <form id="completeForm" onsubmit="submitComplete(event, ${taskId})">
-            <div class="mb-4">
-              <label class="block text-gray-700 font-bold mb-2">Como foi resolvido? *</label>
-              <textarea name="resolution_notes" rows="4" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" required placeholder="Descreva a solução aplicada..."></textarea>
+            <div class="mb-6">
+              <label class="block text-gray-300 font-bold mb-2">Como foi resolvido? *</label>
+              <textarea name="resolution_notes" rows="4" class="form-textarea bg-dark-800 border-white/10 text-white focus:border-green-500" required placeholder="Descreva a solução aplicada..."></textarea>
             </div>
             
-            <div class="mb-6">
-              <label class="block text-gray-700 font-bold mb-2">Screenshot da Solução (Opcional)</label>
-              <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer" onclick="document.getElementById('solutionScreenshot').click()">
-                <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
-                <p class="text-gray-500">Clique para fazer upload da imagem</p>
+            <div class="mb-8">
+              <label class="block text-gray-300 font-bold mb-2">Screenshot da Solução (Opcional)</label>
+              <div class="border-2 border-dashed border-white/10 rounded-xl p-8 text-center hover:bg-white/5 transition-colors cursor-pointer group" onclick="document.getElementById('solutionScreenshot').click()">
+                 <div class="w-12 h-12 bg-dark-800 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                     <i class="fas fa-cloud-upload-alt text-xl text-green-400"></i>
+                </div>
+                <p class="text-gray-400 font-medium group-hover:text-white transition-colors">Clique para fazer upload da imagem</p>
                 <input type="file" id="solutionScreenshot" name="screenshot" class="hidden" accept="image/*" onchange="previewSolutionImage(this)">
               </div>
               <div id="solutionPreview" class="mt-4 hidden">
-                <img src="" alt="Preview" class="max-h-48 rounded-lg border border-gray-200 mx-auto">
+                <img src="" alt="Preview" class="max-h-48 rounded-xl border border-white/10 mx-auto shadow-lg">
               </div>
             </div>
             
-            <div class="flex justify-end gap-3">
+            <div class="flex justify-end gap-3 pt-4 border-t border-white/10">
               <button type="button" onclick="closeCompleteModal()" class="btn btn-secondary">Cancelar</button>
-              <button type="submit" class="btn btn-success">
+              <button type="submit" class="btn btn-success shadow-lg shadow-green-500/20">
                 <i class="fas fa-check mr-2"></i> Confirmar Conclusão
               </button>
             </div>
