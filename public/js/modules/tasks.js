@@ -116,13 +116,7 @@ async function loadTasksModule() {
           </div>
 
           ${isEditMode ? `
-             <!-- Tempo Gasto (Edit Only) -->
-            <div class="form-group">
-              <label class="form-label">
-                <i class="fas fa-clock mr-2"></i>Tempo Gasto (segundos)
-              </label>
-              <input type="number" id="taskTimeSpent" class="form-input" value="${taskData.time_spent || 0}">
-            </div>
+
 
             <!-- Notas de Resolução (Edit Only) -->
             <div class="form-group md:col-span-2">
@@ -241,7 +235,6 @@ async function handleTaskSubmit(e) {
 
     if (editingTaskId) {
       // Add edit-specific fields
-      taskData.time_spent = document.getElementById('taskTimeSpent').value;
       taskData.resolution_notes = document.getElementById('taskResolutionNotes').value;
     }
 

@@ -1,8 +1,6 @@
 // Home Module - Shows priority task and Time Tracker
 
-let activeTimer = null;
-let timerInterval = null;
-let currentTaskTime = 0;
+// Home Module - Shows priority task and SQL Playground (for SuperUser)
 
 async function loadHomeModule() {
   const mainContent = document.getElementById('mainContent');
@@ -10,8 +8,11 @@ async function loadHomeModule() {
   try {
     // Fetch priority task
     const task = await apiGet('/tasks/priority/top');
-    // Fetch all pending tasks for the timer dropdown
-    const allTasks = await apiGet('/tasks?status=pending');
+
+    // Get current user for SQL Playground check
+    const userJson = localStorage.getItem('user');
+    const user = userJson ? JSON.parse(userJson) : null;
+    const isSuperUser = user && (user.username === 'SuperUser' || user.role === 'Admin');
 
     let priorityTaskHtml = '';
 
@@ -151,43 +152,54 @@ async function loadHomeModule() {
         </div>`;
     }
 
-    // Time Tracker HTML
-    const timeTrackerHtml = `
-      <div class="card bg-gray-800 text-white mb-8">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-2xl font-bold flex items-center">
-            <i class="fas fa-stopwatch mr-3 text-yellow-400"></i>
-            Time Tracker
-          </h2>
-          <div id="timerDisplay" class="text-4xl font-mono font-bold text-yellow-400">
-            00:00:00
-          </div>
-        </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="md:col-span-2">
-            <label class="block text-sm font-medium text-gray-300 mb-1">Selecione a Task</label>
-            <select id="timerTaskSelect" class="w-full bg-gray-700 border-gray-600 text-white rounded-lg focus:ring-yellow-400 focus:border-yellow-400" ${activeTimer ? 'disabled' : ''}>
-              <option value="">Selecione uma task para iniciar...</option>
-              ${allTasks.map(t => `<option value="${t.id}" ${activeTimer === t.id ? 'selected' : ''}>#${t.id} - ${t.name}</option>`).join('')}
-            </select>
-          </div>
-          <div class="flex items-end gap-2">
-            <button id="startTimerBtn" onclick="startTimer()" class="btn bg-green-600 hover:bg-green-700 text-white flex-1 ${activeTimer ? 'hidden' : ''}">
-              <i class="fas fa-play mr-2"></i> Iniciar
-            </button>
-            <button id="stopTimerBtn" onclick="stopTimer()" class="btn bg-red-600 hover:bg-red-700 text-white flex-1 ${!activeTimer ? 'hidden' : ''}">
-              <i class="fas fa-stop mr-2"></i> Parar
-            </button>
-          </div>
-        </div>
-        
-        <div id="activeTaskInfo" class="mt-4 text-sm text-gray-400 ${!activeTimer ? 'hidden' : ''}">
-          <i class="fas fa-info-circle mr-2"></i>
-          Trabalhando na task <span class="font-bold text-white" id="activeTaskName"></span>
-        </div>
-      </div>
-    `;
+    // SQL Playground HTML (Only for SuperUser)
+    let sqlPlaygroundHtml = '';
+
+    if (isSuperUser) {
+      sqlPlaygroundHtml = `
+            <div class="card bg-gray-800 text-white mb-8 border border-gray-700">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold flex items-center text-blue-400">
+                        <i class="fas fa-database mr-2"></i>
+                        SQL Playground
+                    </h2>
+                    <span class="text-xs bg-red-600 text-white px-2 py-1 rounded">CUIDADO: Acesso Direto</span>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="flex gap-4 mb-2">
+                        <div class="w-1/4">
+                            <label class="block text-xs text-gray-400 mb-1">Operação</label>
+                            <select id="sqlOperation" class="w-full bg-gray-700 border-gray-600 text-white rounded p-2 focus:border-blue-500" onchange="handleSqlOperationChange(this)">
+                                <option value="SELECT">SELECT</option>
+                                <option value="UPDATE">UPDATE</option>
+                                <option value="DELETE">DELETE</option>
+                            </select>
+                        </div>
+                        <div class="w-3/4">
+                            <label class="block text-xs text-gray-400 mb-1">Query SQL</label>
+                            <div class="relative">
+                                <textarea id="sqlQuery" rows="3" class="w-full bg-gray-900 border-gray-700 text-green-400 font-mono text-sm rounded p-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="SELECT * FROM users"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end">
+                        <button onclick="executeSql()" class="btn btn-primary bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 text-sm">
+                            <i class="fas fa-play mr-2"></i> Executar Scrip
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Results Area -->
+                <div id="sqlResults" class="hidden mt-4 border-t border-gray-700 pt-4">
+                    <h3 class="text-sm font-semibold text-gray-400 mb-2">Resultado:</h3>
+                    <div class="overflow-x-auto bg-gray-900 rounded p-2 max-h-60 overflow-y-auto">
+                        <div id="sqlOutput" class="text-xs font-mono"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 
     mainContent.innerHTML = `
       <div class="max-w-4xl mx-auto">
@@ -195,7 +207,7 @@ async function loadHomeModule() {
           <i class="fas fa-home mr-3"></i>Home
         </h1>
         
-        ${timeTrackerHtml}
+        ${sqlPlaygroundHtml}
         
         <h2 class="text-xl font-bold text-gray-800 mb-4">
           <i class="fas fa-star mr-2 text-yellow-500"></i>
@@ -205,30 +217,7 @@ async function loadHomeModule() {
       </div>
     `;
 
-    // Restore timer state if active
-    if (activeTimer) {
-      const task = allTasks.find(t => t.id === activeTimer);
-      if (task) {
-        currentTaskTime = task.time_spent || 0;
-        document.getElementById('timerTaskSelect').disabled = true;
-        document.getElementById('startTimerBtn').classList.add('hidden');
-        document.getElementById('stopTimerBtn').classList.remove('hidden');
-        document.getElementById('activeTaskInfo').classList.remove('hidden');
-        document.getElementById('activeTaskName').textContent = `#${task.id} - ${task.name}`;
-        updateTimerDisplay();
-        timerInterval = setInterval(() => {
-          currentTaskTime++;
-          updateTimerDisplay();
-          if (currentTaskTime % 60 === 0) {
-            saveTimer(activeTimer, currentTaskTime);
-          }
-        }, 1000);
-      } else {
-        // If activeTimer task is no longer pending, reset timer
-        activeTimer = null;
-        currentTaskTime = 0;
-      }
-    }
+
 
   } catch (error) {
     console.error(error);
@@ -241,80 +230,109 @@ async function loadHomeModule() {
   }
 }
 
-// Timer Functions
-async function startTimer() {
-  const taskSelect = document.getElementById('timerTaskSelect');
-  const taskId = taskSelect.value;
+// SQL Playground Functions
 
-  if (!taskId) {
-    showNotification('Selecione uma task para iniciar o timer', 'error');
-    return;
+function handleSqlOperationChange(selectInfo) {
+  const operation = selectInfo.value;
+
+  if (operation === 'UPDATE' || operation === 'DELETE') {
+    const modalHtml = `
+            <div id="sqlWarningModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
+                <div class="bg-gray-800 border border-red-600 rounded-lg shadow-2xl max-w-md w-full p-6 text-white">
+                    <div class="flex items-center mb-4">
+                        <div class="bg-red-900/50 rounded-full p-3 mr-4">
+                            <i class="fas fa-exclamation-triangle text-red-500 text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-red-400">Atenção Extrema!</h3>
+                    </div>
+                    <p class="text-gray-300 mb-4">
+                        Você selecionou uma operação destrutiva (<strong>${operation}</strong>).
+                        <br><br>
+                        Alterações diretas no banco de dados são irreversíveis e podem corromper o sistema se não feitas com cuidado.
+                    </p>
+                    <div class="bg-red-900/30 p-3 rounded mb-6 border border-red-800 text-red-200 text-sm">
+                        Certifique-se de usar a cláusula <code>WHERE</code> para não afetar todos os registros!
+                    </div>
+                    <div class="flex justify-end gap-3">
+                        <button onclick="document.getElementById('sqlOperation').value='SELECT'; document.getElementById('sqlWarningModal').remove()" class="px-4 py-2 rounded text-gray-300 hover:text-white hover:bg-gray-700">
+                            Cancelar (Voltar para SELECT)
+                        </button>
+                        <button onclick="document.getElementById('sqlWarningModal').remove()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 font-bold">
+                            Estou ciente dos riscos
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
   }
+}
+
+async function executeSql() {
+  const query = document.getElementById('sqlQuery').value;
+  if (!query) return;
+
+  const btn = document.querySelector('button[onclick="executeSql()"]');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Executando...';
+
+  const resultsArea = document.getElementById('sqlResults');
+  const outputArea = document.getElementById('sqlOutput');
+  resultsArea.classList.add('hidden');
 
   try {
-    const task = await apiGet(`/tasks/${taskId}`);
-    activeTimer = parseInt(taskId);
-    currentTaskTime = task.time_spent || 0;
+    const result = await apiPost('/admin/sql', { query });
 
-    // Update UI
-    document.getElementById('timerTaskSelect').disabled = true;
-    document.getElementById('startTimerBtn').classList.add('hidden');
-    document.getElementById('stopTimerBtn').classList.remove('hidden');
-    document.getElementById('activeTaskInfo').classList.remove('hidden');
-    document.getElementById('activeTaskName').textContent = `#${task.id} - ${task.name}`;
+    resultsArea.classList.remove('hidden');
 
-    // Start interval
-    timerInterval = setInterval(() => {
-      currentTaskTime++;
-      updateTimerDisplay();
-      // Save every minute
-      if (currentTaskTime % 60 === 0) {
-        saveTimer(activeTimer, currentTaskTime);
+    if (result.error) {
+      outputArea.innerHTML = `<span class="text-red-400">Error: ${result.error}</span>`;
+    } else if (result.rows && Array.isArray(result.rows)) {
+      if (result.rows.length === 0) {
+        if (result.command === 'SELECT') {
+          outputArea.innerHTML = '<span class="text-gray-400">Nenhum registro encontrado.</span>';
+        } else {
+          outputArea.innerHTML = `<span class="text-green-400">Comando executado com sucesso. Linhas afetadas: ${result.rowCount}</span>`;
+        }
+      } else {
+        // Render table
+        const keys = Object.keys(result.rows[0]);
+        let tableHtml = '<table class="w-full text-left border-collapse">';
+
+        // Header
+        tableHtml += '<thead><tr>';
+        keys.forEach(key => {
+          tableHtml += `<th class="p-2 border-b border-gray-700 text-gray-400 font-semibold">${key}</th>`;
+        });
+        tableHtml += '</tr></thead>';
+
+        // Body
+        tableHtml += '<tbody>';
+        result.rows.forEach(row => {
+          tableHtml += '<tr class="hover:bg-gray-800">';
+          keys.forEach(key => {
+            let val = row[key];
+            if (typeof val === 'object' && val !== null) val = JSON.stringify(val);
+            tableHtml += `<td class="p-2 border-b border-gray-800 text-gray-300 truncate max-w-xs" title="${val}">${val}</td>`;
+          });
+          tableHtml += '</tr>';
+        });
+        tableHtml += '</tbody></table>';
+
+        outputArea.innerHTML = tableHtml;
       }
-    }, 1000);
+    } else {
+      outputArea.innerHTML = `<span class="text-green-400">Comando executado. ${JSON.stringify(result)}</span>`;
+    }
 
-    showNotification('Timer iniciado!', 'success');
   } catch (error) {
-    showNotification('Erro ao iniciar timer', 'error');
+    resultsArea.classList.remove('hidden');
+    outputArea.innerHTML = `<span class="text-red-400">Erro na requisição: ${error.message}</span>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
   }
-}
-
-async function stopTimer() {
-  if (!activeTimer) return;
-
-  clearInterval(timerInterval);
-  await saveTimer(activeTimer, currentTaskTime);
-
-  activeTimer = null;
-  timerInterval = null;
-
-  // Update UI
-  document.getElementById('timerTaskSelect').disabled = false;
-  document.getElementById('startTimerBtn').classList.remove('hidden');
-  document.getElementById('stopTimerBtn').classList.add('hidden');
-  document.getElementById('activeTaskInfo').classList.add('hidden');
-  document.getElementById('timerTaskSelect').value = '';
-  document.getElementById('timerDisplay').textContent = '00:00:00';
-
-  showNotification('Timer parado e salvo!', 'success');
-}
-
-async function saveTimer(taskId, time) {
-  try {
-    await apiPost(`/tasks/${taskId}/timer`, { time_spent: time });
-  } catch (error) {
-    console.error('Error saving timer:', error);
-  }
-}
-
-function updateTimerDisplay() {
-  const hours = Math.floor(currentTaskTime / 3600);
-  const minutes = Math.floor((currentTaskTime % 3600) / 60);
-  const seconds = currentTaskTime % 60;
-
-  const display = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-  const displayEl = document.getElementById('timerDisplay');
-  if (displayEl) displayEl.textContent = display;
 }
 
 function pad(num) {
@@ -323,10 +341,6 @@ function pad(num) {
 
 // Complete task action
 async function completeTask(taskId) {
-  // Stop timer if running for this task
-  if (activeTimer === taskId) {
-    await stopTimer();
-  }
 
   // Create modal for completion details
   const modalHtml = `
