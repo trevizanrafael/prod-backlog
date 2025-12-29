@@ -39,9 +39,13 @@ async function loadTasksModule() {
   }
 
   mainContent.innerHTML = `
-    <div class="max-w-4xl mx-auto">
-      <h1 class="text-3xl font-bold text-gray-900 mb-8">
-        <i class="fas ${isEditMode ? 'fa-edit' : 'fa-plus-circle'} mr-3"></i>${isEditMode ? 'Editar Task' : 'Criar Nova Task'}
+  mainContent.innerHTML = `
+    < div class="max-w-4xl mx-auto animate-slide-in" >
+      <h1 class="text-3xl font-bold text-white mb-8 flex items-center gap-3">
+        <div class="p-2 bg-primary-500/10 rounded-lg">
+            <i class="fas ${isEditMode ? 'fa-edit' : 'fa-plus-circle'} text-primary-400"></i>
+        </div>
+        ${isEditMode ? 'Editar Task' : 'Criar Nova Task'}
       </h1>
       
       <form id="taskForm" class="card">
@@ -49,7 +53,7 @@ async function loadTasksModule() {
           <!-- Nome -->
           <div class="form-group md:col-span-2">
             <label class="form-label">
-              <i class="fas fa-tag mr-2"></i>Nome da Task *
+              <i class="fas fa-tag mr-2 text-primary-400"></i>Nome da Task <span class="text-red-400">*</span>
             </label>
             <input type="text" id="taskName" class="form-input" required placeholder="Ex: Corrigir bug no login" value="${taskData ? taskData.name : ''}">
           </div>
@@ -57,7 +61,7 @@ async function loadTasksModule() {
           <!-- Escopo -->
           <div class="form-group">
             <label class="form-label">
-              <i class="fas fa-folder mr-2"></i>Escopo
+              <i class="fas fa-folder mr-2 text-purple-400"></i>Escopo
             </label>
             <select id="taskScope" class="form-select">
               <option value="">Sem escopo</option>
@@ -68,7 +72,7 @@ async function loadTasksModule() {
           <!-- Data Prazo -->
           <div class="form-group">
             <label class="form-label">
-              <i class="fas fa-calendar mr-2"></i>Data de Prazo *
+              <i class="fas fa-calendar mr-2 text-blue-400"></i>Data de Prazo <span class="text-red-400">*</span>
             </label>
             <input type="date" id="taskDueDate" class="form-input" required value="${taskData ? taskData.due_date.split('T')[0] : ''}">
           </div>
@@ -76,7 +80,7 @@ async function loadTasksModule() {
           <!-- Prioridade -->
           <div class="form-group">
             <label class="form-label">
-              <i class="fas fa-exclamation-circle mr-2"></i>Prioridade *
+              <i class="fas fa-exclamation-circle mr-2 text-orange-400"></i>Prioridade <span class="text-red-400">*</span>
             </label>
             <select id="taskPriority" class="form-select" required>
               <option value="">Selecione...</option>
@@ -89,7 +93,7 @@ async function loadTasksModule() {
           <!-- Complexidade -->
           <div class="form-group">
             <label class="form-label">
-              <i class="fas fa-brain mr-2"></i>Complexidade *
+              <i class="fas fa-brain mr-2 text-pink-400"></i>Complexidade <span class="text-red-400">*</span>
             </label>
             <select id="taskComplexity" class="form-select" required>
               <option value="">Selecione...</option>
@@ -102,7 +106,7 @@ async function loadTasksModule() {
           <!-- Descrição do Problema -->
           <div class="form-group md:col-span-2">
             <label class="form-label">
-              <i class="fas fa-bug mr-2"></i>Descrição do Problema
+              <i class="fas fa-bug mr-2 text-red-400"></i>Descrição do Problema
             </label>
             <textarea id="taskProblem" class="form-textarea" rows="4" placeholder="Descreva o problema detalhadamente...">${taskData ? taskData.description_problem || '' : ''}</textarea>
           </div>
@@ -110,7 +114,7 @@ async function loadTasksModule() {
           <!-- Descrição da Solução -->
           <div class="form-group md:col-span-2">
             <label class="form-label">
-              <i class="fas fa-lightbulb mr-2"></i>Como Resolver
+              <i class="fas fa-lightbulb mr-2 text-yellow-400"></i>Como Resolver
             </label>
             <textarea id="taskSolution" class="form-textarea" rows="4" placeholder="Descreva como resolver o problema...">${taskData ? taskData.description_solution || '' : ''}</textarea>
           </div>
@@ -130,21 +134,25 @@ async function loadTasksModule() {
           <!-- Screenshots -->
           <div class="form-group md:col-span-2">
             <label class="form-label">
-              <i class="fas fa-images mr-2"></i>${isEditMode ? 'Adicionar Screenshots' : 'Screenshots do Problema'}
+              <i class="fas fa-images mr-2 text-primary-400"></i>${isEditMode ? 'Adicionar Screenshots' : 'Screenshots do Problema'}
             </label>
-            <input type="file" id="taskScreenshots" class="form-input" accept="image/*" multiple>
-            <p class="text-sm text-gray-500 mt-1">
-              Você pode selecionar múltiplas imagens (máx 10MB por imagem)
-            </p>
-            <div id="screenshotPreview" class="mt-3"></div>
+            <div class="border-2 border-dashed border-white/10 rounded-xl p-8 text-center hover:bg-white/5 transition-colors cursor-pointer group" onclick="document.getElementById('taskScreenshots').click()">
+                 <div class="w-12 h-12 bg-dark-800 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-cloud-upload-alt text-xl text-primary-400"></i>
+                 </div>
+                 <p class="text-white font-medium">Clique para fazer upload</p>
+                 <p class="text-sm text-dark-400 mt-1">Máx 10MB por imagem</p>
+            </div>
+            <input type="file" id="taskScreenshots" class="hidden" accept="image/*" multiple>
+            <div id="screenshotPreview" class="mt-4 flex flex-wrap gap-3"></div>
             
             ${isEditMode && taskData.screenshots && taskData.screenshots.length > 0 ? `
               <div class="mt-4">
-                <p class="text-sm font-bold text-gray-700 mb-2">Screenshots Atuais:</p>
+                <p class="text-sm font-bold text-gray-300 mb-2">Screenshots Atuais:</p>
                 <div class="flex flex-wrap gap-2">
                   ${taskData.screenshots.map(s => `
                     <div class="relative group">
-                      <img src="${s.path}" class="w-24 h-24 object-cover rounded border border-gray-300">
+                      <img src="${s.path}" class="w-24 h-24 object-cover rounded border border-gray-600">
                       <a href="${s.path}" target="_blank" class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all"></a>
                     </div>
                   `).join('')}
@@ -155,7 +163,7 @@ async function loadTasksModule() {
         </div>
         
         <!-- Actions -->
-        <div class="flex gap-3 mt-8 pt-6 border-t border-gray-200">
+        <div class="flex gap-4 mt-8 pt-6 border-t border-white/10">
           <button type="submit" class="btn btn-primary flex-1">
             <i class="fas fa-save"></i> ${isEditMode ? 'Salvar Alterações' : 'Criar Task'}
           </button>
@@ -164,8 +172,8 @@ async function loadTasksModule() {
           </button>
         </div>
       </form>
-    </div>
-  `;
+    </div >
+    `;
 
   // Set default date to today if creating new
   if (!isEditMode) {
@@ -192,11 +200,11 @@ function handleFileSelection(e) {
       const div = document.createElement('div');
       div.className = 'screenshot-preview';
       div.innerHTML = `
-        <img src="${e.target.result}" alt="Preview">
-        <button type="button" class="delete-btn" onclick="removeFile(${index})">
-          <i class="fas fa-times"></i>
-        </button>
-      `;
+    < img src = "${e.target.result}" alt = "Preview" >
+      <button type="button" class="delete-btn" onclick="removeFile(${index})">
+        <i class="fas fa-times"></i>
+      </button>
+  `;
       preview.appendChild(div);
     };
     reader.readAsDataURL(file);
@@ -241,7 +249,7 @@ async function handleTaskSubmit(e) {
     let taskId;
 
     if (editingTaskId) {
-      await apiPut(`/tasks/${editingTaskId}`, taskData);
+      await apiPut(`/ tasks / ${ editingTaskId } `, taskData);
       taskId = editingTaskId;
       showNotification('Task atualizada com sucesso!', 'success');
     } else {
@@ -253,17 +261,17 @@ async function handleTaskSubmit(e) {
     // Upload screenshots
     if (selectedFiles.length > 0) {
       for (const file of selectedFiles) {
-        await uploadFile(`/tasks/${taskId}/screenshots`, file);
-      }
+        await uploadFile(`/ tasks / ${ taskId }/screenshots`, file);
+}
     }
 
-    selectedFiles = [];
-    editingTaskId = null;
-    loadModule('task-list');
+selectedFiles = [];
+editingTaskId = null;
+loadModule('task-list');
   } catch (error) {
-    console.error(error);
-    submitBtn.disabled = false;
-    submitBtn.innerHTML = '<i class="fas fa-save"></i> ' + (editingTaskId ? 'Salvar Alterações' : 'Criar Task');
-    showNotification('Erro ao salvar task', 'error');
-  }
+  console.error(error);
+  submitBtn.disabled = false;
+  submitBtn.innerHTML = '<i class="fas fa-save"></i> ' + (editingTaskId ? 'Salvar Alterações' : 'Criar Task');
+  showNotification('Erro ao salvar task', 'error');
+}
 }
