@@ -248,32 +248,84 @@ async function loadHomeModule() {
     mainContent.innerHTML = `
       <div class="max-w-5xl mx-auto animate-fade-in">
         <h1 class="text-3xl font-bold text-white mb-8 flex items-center gap-3">
-          <div class="p-2 bg-primary-500/10 rounded-lg">
-             <i class="fas fa-home text-primary-400"></i>
-          </div>
-          Home
-        </h1>
-        
-        ${sqlPlaygroundHtml}
-        
-        <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
-          <i class="fas fa-star text-yellow-500 animate-pulse"></i>
-          Task Prioritária
+        <div class="p-2 bg-primary-500/10 rounded-lg">
+          <i class="fas fa-home text-primary-400"></i>
+        </div>
+        Home
+      </h1>
+
+      ${sqlPlaygroundHtml}
+
+      <!-- Markdown Editor Section -->
+      <div class="mb-8">
+        <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <i class="fas fa-sticky-note text-pink-400"></i>
+          Notas Rápidas
+          <span class="text-xs font-normal text-dark-400 ml-2 bg-dark-800 px-2 py-1 rounded border border-white/5">Markdown Supported</span>
         </h2>
-        ${priorityTaskHtml}
+
+        <div class="card p-0 overflow-hidden border border-white/10 shadow-xl">
+          <!-- Editor Toolbar -->
+          <div class="bg-dark-900/50 border-b border-white/5 px-4 py-2 flex items-center justify-between">
+            <div class="flex space-x-1">
+              <button onclick="switchMarkdownMode('edit')" id="md-app-tab-edit" class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-primary-600/20 text-primary-400 border border-primary-500/30">
+                <i class="fas fa-code mr-2"></i>Edit
+              </button>
+              <button onclick="switchMarkdownMode('preview')" id="md-app-tab-preview" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-all duration-200 border border-transparent">
+                <i class="fas fa-eye mr-2"></i>Preview
+              </button>
+            </div>
+            <div class="text-xs text-gray-500 font-mono">
+              <i class="fab fa-markdown text-lg mr-1 align-middle"></i>
+              Saved locally
+            </div>
+          </div>
+
+          <!-- Editor Area -->
+          <div class="relative min-h-[150px]">
+            <textarea id="md-app-input"
+              class="w-full h-40 bg-dark-800/50 text-gray-200 p-4 font-mono text-sm focus:outline-none resize-y placeholder-gray-600"
+              placeholder="Escreva suas anotações aqui... Use **negrito**, - listas, ou \`código\`."
+              oninput="saveMarkdownNotes(this.value)"></textarea>
+
+            <div id="md-app-preview" class="hidden w-full h-40 overflow-y-auto bg-dark-800/30 p-4 text-gray-200 prose prose-invert max-w-none">
+              <!-- Preview content will be injected here -->
+            </div>
+          </div>
+
+          <!-- Footer Help -->
+          <div class="bg-dark-900/30 px-4 py-1.5 border-t border-white/5 flex justify-between items-center">
+            <div class="text-[10px] text-gray-500">
+              Supports GFM (GitHub Flavored Markdown)
+            </div>
+            <div id="md-save-status" class="text-[10px] text-green-500 opacity-0 transition-opacity duration-300">
+              <i class="fas fa-check-circle"></i> Saved
+            </div>
+          </div>
+        </div>
       </div>
+
+      <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
+        <i class="fas fa-star text-yellow-500 animate-pulse"></i>
+        Task Prioritária
+      </h2>
+      ${priorityTaskHtml}
+    </div>
     `;
+
+    // Initialize Markdown Editor Content
+    initMarkdownEditor();
 
 
 
   } catch (error) {
     console.error(error);
     mainContent.innerHTML = `
-      <div class="card text-center">
+      <div class="card text-center" >
         <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
         <p class="text-gray-700">Erro ao carregar a home.</p>
       </div>
-    `;
+      `;
   }
 }
 
@@ -284,84 +336,84 @@ function handleSqlOperationChange(selectInfo) {
 
   if (operation === 'UPDATE' || operation === 'DELETE') {
     const modalHtml = `
-            <div id="sqlWarningModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in" style="background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(4px);">
-                <div class="relative max-w-lg w-full rounded-2xl overflow-hidden shadow-2xl animate-scale-in" style="background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%); border: 2px solid #dc2626;">
-                    <!-- Animated danger stripes in background -->
-                    <div class="absolute inset-0 opacity-10" style="background: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(220, 38, 38, 0.3) 35px, rgba(220, 38, 38, 0.3) 70px);"></div>
-                    
-                    <!-- Glowing border effect -->
-                    <div class="absolute inset-0 opacity-30 animate-pulse" style="box-shadow: inset 0 0 30px rgba(220, 38, 38, 0.5);"></div>
-                    
-                    <div class="relative p-8">
-                        <!-- Icon Header -->
-                        <div class="flex items-center gap-4 mb-6">
-                            <div class="relative">
-                                <div class="absolute inset-0 bg-red-600 rounded-full blur-xl opacity-50 animate-pulse"></div>
-                                <div class="relative bg-gradient-to-br from-red-600 to-red-700 rounded-full p-4 shadow-xl">
-                                    <i class="fas fa-exclamation-triangle text-white text-3xl"></i>
-                                </div>
-                            </div>
-                            <div>
-                                <h3 class="text-2xl font-bold text-white mb-1">⚠️ Atenção Extrema!</h3>
-                                <p class="text-red-300 text-sm font-medium">Operação Destrutiva Detectada</p>
-                            </div>
-                        </div>
-                        
-                        <!-- Warning Content -->
-                        <div class="bg-black/40 backdrop-blur-sm rounded-xl p-5 mb-6 border border-red-900/50">
-                            <p class="text-gray-200 leading-relaxed mb-4">
-                                Você selecionou a operação <span class="px-2 py-1 bg-red-600 text-white font-bold rounded">${operation}</span>.
-                            </p>
-                            <p class="text-gray-300 text-sm leading-relaxed">
-                                Alterações diretas no banco de dados são <strong class="text-red-400">irreversíveis</strong> e podem corromper todo o sistema se não executadas corretamente.
-                            </p>
-                        </div>
-                        
-                        <!-- Critical Warning Box -->
-                        <div class="bg-gradient-to-r from-red-900/40 to-orange-900/40 backdrop-blur-sm p-4 rounded-xl mb-6 border-2 border-red-700/50 shadow-lg">
-                            <div class="flex items-start gap-3">
-                                <i class="fas fa-shield-alt text-red-400 text-lg mt-0.5"></i>
-                                <div class="text-red-100 text-sm">
-                                    <p class="font-bold mb-1">Lembre-se:</p>
-                                    <ul class="list-disc list-inside space-y-1 text-xs">
-                                        <li>Sempre use a cláusula <code class="bg-black/50 px-1.5 py-0.5 rounded font-mono text-yellow-300">WHERE</code></li>
-                                        <li>Teste com <code class="bg-black/50 px-1.5 py-0.5 rounded font-mono text-yellow-300">LIMIT 1</code> primeiro</li>
-                                        <li>Verifique os dados com um SELECT antes</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Action Buttons -->
-                        <div class="flex gap-3">
-                            <button onclick="document.getElementById('sqlOperation').value='SELECT'; document.getElementById('sqlWarningModal').remove()" class="flex-1 px-5 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 text-white font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95">
-                                <i class="fas fa-arrow-left mr-2"></i>Cancelar
-                            </button>
-                            <button onclick="document.getElementById('sqlWarningModal').remove()" class="flex-1 px-5 py-3 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold transition-all duration-200 shadow-lg shadow-red-500/50 hover:shadow-red-500/70 transform hover:scale-105 active:scale-95">
-                                <i class="fas fa-check mr-2"></i>Ciente dos Riscos
-                            </button>
-                        </div>
-                    </div>
+      <div id = "sqlWarningModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in" style = "background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(4px);" >
+        <div class="relative max-w-lg w-full rounded-2xl overflow-hidden shadow-2xl animate-scale-in" style="background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%); border: 2px solid #dc2626;">
+          <!-- Animated danger stripes in background -->
+          <div class="absolute inset-0 opacity-10" style="background: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(220, 38, 38, 0.3) 35px, rgba(220, 38, 38, 0.3) 70px);"></div>
+
+          <!-- Glowing border effect -->
+          <div class="absolute inset-0 opacity-30 animate-pulse" style="box-shadow: inset 0 0 30px rgba(220, 38, 38, 0.5);"></div>
+
+          <div class="relative p-8">
+            <!-- Icon Header -->
+            <div class="flex items-center gap-4 mb-6">
+              <div class="relative">
+                <div class="absolute inset-0 bg-red-600 rounded-full blur-xl opacity-50 animate-pulse"></div>
+                <div class="relative bg-gradient-to-br from-red-600 to-red-700 rounded-full p-4 shadow-xl">
+                  <i class="fas fa-exclamation-triangle text-white text-3xl"></i>
                 </div>
+              </div>
+              <div>
+                <h3 class="text-2xl font-bold text-white mb-1">⚠️ Atenção Extrema!</h3>
+                <p class="text-red-300 text-sm font-medium">Operação Destrutiva Detectada</p>
+              </div>
             </div>
-            
-            <style>
-                @keyframes fade-in {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
+
+            <!-- Warning Content -->
+            <div class="bg-black/40 backdrop-blur-sm rounded-xl p-5 mb-6 border border-red-900/50">
+              <p class="text-gray-200 leading-relaxed mb-4">
+                Você selecionou a operação <span class="px-2 py-1 bg-red-600 text-white font-bold rounded">${operation}</span>.
+              </p>
+              <p class="text-gray-300 text-sm leading-relaxed">
+                Alterações diretas no banco de dados são <strong class="text-red-400">irreversíveis</strong> e podem corromper todo o sistema se não executadas corretamente.
+              </p>
+            </div>
+
+            <!-- Critical Warning Box -->
+            <div class="bg-gradient-to-r from-red-900/40 to-orange-900/40 backdrop-blur-sm p-4 rounded-xl mb-6 border-2 border-red-700/50 shadow-lg">
+              <div class="flex items-start gap-3">
+                <i class="fas fa-shield-alt text-red-400 text-lg mt-0.5"></i>
+                <div class="text-red-100 text-sm">
+                  <p class="font-bold mb-1">Lembre-se:</p>
+                  <ul class="list-disc list-inside space-y-1 text-xs">
+                    <li>Sempre use a cláusula <code class="bg-black/50 px-1.5 py-0.5 rounded font-mono text-yellow-300">WHERE</code></li>
+                    <li>Teste com <code class="bg-black/50 px-1.5 py-0.5 rounded font-mono text-yellow-300">LIMIT 1</code> primeiro</li>
+                    <li>Verifique os dados com um SELECT antes</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-3">
+              <button onclick="document.getElementById('sqlOperation').value='SELECT'; document.getElementById('sqlWarningModal').remove()" class="flex-1 px-5 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 text-white font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95">
+                <i class="fas fa-arrow-left mr-2"></i>Cancelar
+              </button>
+              <button onclick="document.getElementById('sqlWarningModal').remove()" class="flex-1 px-5 py-3 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold transition-all duration-200 shadow-lg shadow-red-500/50 hover:shadow-red-500/70 transform hover:scale-105 active:scale-95">
+                <i class="fas fa-check mr-2"></i>Ciente dos Riscos
+              </button>
+            </div>
+          </div>
+        </div>
+            </div>
+
+      <style>
+        @keyframes fade-in {
+          from {opacity: 0; }
+        to {opacity: 1; }
                 }
-                @keyframes scale-in {
-                    from { transform: scale(0.9); opacity: 0; }
-                    to { transform: scale(1); opacity: 1; }
+        @keyframes scale-in {
+          from {transform: scale(0.9); opacity: 0; }
+        to {transform: scale(1); opacity: 1; }
                 }
-                .animate-fade-in {
-                    animation: fade-in 0.2s ease-out;
+        .animate-fade-in {
+          animation: fade-in 0.2s ease-out;
                 }
-                .animate-scale-in {
-                    animation: scale-in 0.3s ease-out;
+        .animate-scale-in {
+          animation: scale-in 0.3s ease-out;
                 }
-            </style>
-        `;
+      </style>
+    `;
     document.body.insertAdjacentHTML('beforeend', modalHtml);
   }
 }
@@ -385,13 +437,13 @@ async function executeSql() {
     resultsArea.classList.remove('hidden');
 
     if (result.error) {
-      outputArea.innerHTML = `<span class="text-red-400">Error: ${result.error}</span>`;
+      outputArea.innerHTML = `<span class="text-red-400" > Error: ${result.error}</span> `;
     } else if (result.rows && Array.isArray(result.rows)) {
       if (result.rows.length === 0) {
         if (result.command === 'SELECT') {
           outputArea.innerHTML = '<span class="text-gray-400">Nenhum registro encontrado.</span>';
         } else {
-          outputArea.innerHTML = `<span class="text-green-400">Comando executado com sucesso. Linhas afetadas: ${result.rowCount}</span>`;
+          outputArea.innerHTML = `<span class="text-green-400" > Comando executado com sucesso.Linhas afetadas: ${result.rowCount}</span> `;
         }
       } else {
         // Render table
@@ -401,7 +453,7 @@ async function executeSql() {
         // Header
         tableHtml += '<thead><tr>';
         keys.forEach(key => {
-          tableHtml += `<th class="p-2 border-b border-gray-700 text-gray-400 font-semibold">${key}</th>`;
+          tableHtml += `<th class="p-2 border-b border-gray-700 text-gray-400 font-semibold" > ${key}</th> `;
         });
         tableHtml += '</tr></thead>';
 
@@ -412,7 +464,7 @@ async function executeSql() {
           keys.forEach(key => {
             let val = row[key];
             if (typeof val === 'object' && val !== null) val = JSON.stringify(val);
-            tableHtml += `<td class="p-2 border-b border-gray-800 text-gray-300 truncate max-w-xs" title="${val}">${val}</td>`;
+            tableHtml += `<td class="p-2 border-b border-gray-800 text-gray-300 truncate max-w-xs" title = "${val}" > ${val}</td> `;
           });
           tableHtml += '</tr>';
         });
@@ -421,12 +473,12 @@ async function executeSql() {
         outputArea.innerHTML = tableHtml;
       }
     } else {
-      outputArea.innerHTML = `<span class="text-green-400">Comando executado. ${JSON.stringify(result)}</span>`;
+      outputArea.innerHTML = `<span class="text-green-400" > Comando executado.${JSON.stringify(result)}</span> `;
     }
 
   } catch (error) {
     resultsArea.classList.remove('hidden');
-    outputArea.innerHTML = `<span class="text-red-400">Erro na requisição: ${error.message}</span>`;
+    outputArea.innerHTML = `<span class="text-red-400" > Erro na requisição: ${error.message}</span> `;
   } finally {
     btn.disabled = false;
     btn.innerHTML = originalText;
@@ -442,46 +494,46 @@ async function completeTask(taskId) {
 
   // Create modal for completion details
   const modalHtml = `
-    <div id="completeModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-      <div class="bg-dark-900 border-2 border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
-        <div class="bg-green-900/30 border-b border-green-500/30 px-6 py-4 flex justify-between items-center">
-          <h3 class="text-xl font-bold text-green-400">Concluir Task #${taskId}</h3>
-          <button onclick="closeCompleteModal()" class="text-green-400 hover:text-white transition-colors">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="p-8">
-          <form id="completeForm" onsubmit="submitComplete(event, ${taskId})">
-            <div class="mb-6">
-              <label class="block text-gray-300 font-bold mb-2">Como foi resolvido? *</label>
-              <textarea name="resolution_notes" rows="4" class="form-textarea bg-dark-800 border-white/10 text-white focus:border-green-500" required placeholder="Descreva a solução aplicada..."></textarea>
-            </div>
-            
-            <div class="mb-8">
-              <label class="block text-gray-300 font-bold mb-2">Screenshot da Solução (Opcional)</label>
-              <div class="border-2 border-dashed border-white/10 rounded-xl p-8 text-center hover:bg-white/5 transition-colors cursor-pointer group" onclick="document.getElementById('solutionScreenshot').click()">
-                 <div class="w-12 h-12 bg-dark-800 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                     <i class="fas fa-cloud-upload-alt text-xl text-green-400"></i>
+      <div id = "completeModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50" >
+        <div class="bg-dark-900 border-2 border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
+          <div class="bg-green-900/30 border-b border-green-500/30 px-6 py-4 flex justify-between items-center">
+            <h3 class="text-xl font-bold text-green-400">Concluir Task #${taskId}</h3>
+            <button onclick="closeCompleteModal()" class="text-green-400 hover:text-white transition-colors">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="p-8">
+            <form id="completeForm" onsubmit="submitComplete(event, ${taskId})">
+              <div class="mb-6">
+                <label class="block text-gray-300 font-bold mb-2">Como foi resolvido? *</label>
+                <textarea name="resolution_notes" rows="4" class="form-textarea bg-dark-800 border-white/10 text-white focus:border-green-500" required placeholder="Descreva a solução aplicada..."></textarea>
+              </div>
+
+              <div class="mb-8">
+                <label class="block text-gray-300 font-bold mb-2">Screenshot da Solução (Opcional)</label>
+                <div class="border-2 border-dashed border-white/10 rounded-xl p-8 text-center hover:bg-white/5 transition-colors cursor-pointer group" onclick="document.getElementById('solutionScreenshot').click()">
+                  <div class="w-12 h-12 bg-dark-800 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-cloud-upload-alt text-xl text-green-400"></i>
+                  </div>
+                  <p class="text-gray-400 font-medium group-hover:text-white transition-colors">Clique para fazer upload da imagem</p>
+                  <input type="file" id="solutionScreenshot" name="screenshot" class="hidden" accept="image/*" onchange="previewSolutionImage(this)">
                 </div>
-                <p class="text-gray-400 font-medium group-hover:text-white transition-colors">Clique para fazer upload da imagem</p>
-                <input type="file" id="solutionScreenshot" name="screenshot" class="hidden" accept="image/*" onchange="previewSolutionImage(this)">
+                <div id="solutionPreview" class="mt-4 hidden">
+                  <img src="" alt="Preview" class="max-h-48 rounded-xl border border-white/10 mx-auto shadow-lg">
+                </div>
               </div>
-              <div id="solutionPreview" class="mt-4 hidden">
-                <img src="" alt="Preview" class="max-h-48 rounded-xl border border-white/10 mx-auto shadow-lg">
+
+              <div class="flex justify-end gap-3 pt-4 border-t border-white/10">
+                <button type="button" onclick="closeCompleteModal()" class="btn btn-secondary">Cancelar</button>
+                <button type="submit" class="btn btn-success shadow-lg shadow-green-500/20">
+                  <i class="fas fa-check mr-2"></i> Confirmar Conclusão
+                </button>
               </div>
-            </div>
-            
-            <div class="flex justify-end gap-3 pt-4 border-t border-white/10">
-              <button type="button" onclick="closeCompleteModal()" class="btn btn-secondary">Cancelar</button>
-              <button type="submit" class="btn btn-success shadow-lg shadow-green-500/20">
-                <i class="fas fa-check mr-2"></i> Confirmar Conclusão
-              </button>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
-      </div>
     </div>
-  `;
+      `;
 
   document.body.insertAdjacentHTML('beforeend', modalHtml);
 }
@@ -512,7 +564,7 @@ async function submitComplete(e, taskId) {
 
   try {
     // 1. Mark as completed with notes
-    await apiPatch(`/tasks/${taskId}/complete`, {
+    await apiPatch(`/tasks/ ${taskId}/complete`, {
       completed: true,
       resolution_notes: notes
     });
@@ -547,4 +599,71 @@ async function uncompleteTask(taskId) {
   } catch (error) {
     showNotification('Erro ao atualizar task', 'error');
   }
+}
+
+// Markdown Editor Functions
+
+function initMarkdownEditor() {
+  const savedNotes = localStorage.getItem('personal_notes') || '';
+  const textarea = document.getElementById('md-app-input');
+  if (textarea) {
+    textarea.value = savedNotes;
+  }
+}
+
+function switchMarkdownMode(mode) {
+  const editTab = document.getElementById('md-app-tab-edit');
+  const previewTab = document.getElementById('md-app-tab-preview');
+  const inputArea = document.getElementById('md-app-input');
+  const previewArea = document.getElementById('md-app-preview');
+
+  if (mode === 'edit') {
+    // Activate Edit Tab
+    editTab.classList.add('bg-primary-600/20', 'text-primary-400', 'border-primary-500/30');
+    editTab.classList.remove('text-gray-400', 'border-transparent');
+
+    previewTab.classList.remove('bg-primary-600/20', 'text-primary-400', 'border-primary-500/30');
+    previewTab.classList.add('text-gray-400', 'border-transparent');
+
+    // Show Input
+    inputArea.classList.remove('hidden');
+    previewArea.classList.add('hidden');
+  } else {
+    // Activate Preview Tab
+    previewTab.classList.add('bg-primary-600/20', 'text-primary-400', 'border-primary-500/30');
+    previewTab.classList.remove('text-gray-400', 'border-transparent');
+
+    editTab.classList.remove('bg-primary-600/20', 'text-primary-400', 'border-primary-500/30');
+    editTab.classList.add('text-gray-400', 'border-transparent');
+
+    // Show Preview and Render
+    const markdownText = inputArea.value;
+    const htmlContent = marked.parse(markdownText);
+
+    previewArea.innerHTML = htmlContent;
+
+    // Sync height if possible, or just let it scroll
+    // previewArea.style.height = getComputedStyle(inputArea).height;
+
+    inputArea.classList.add('hidden');
+    previewArea.classList.remove('hidden');
+  }
+}
+
+let saveTimeout;
+function saveMarkdownNotes(content) {
+  // Debounce saving
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => {
+    localStorage.setItem('personal_notes', content);
+
+    // Show saved indicator
+    const status = document.getElementById('md-save-status');
+    if (status) {
+      status.classList.remove('opacity-0');
+      setTimeout(() => {
+        status.classList.add('opacity-0');
+      }, 2000);
+    }
+  }, 500);
 }
