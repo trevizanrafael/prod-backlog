@@ -315,7 +315,104 @@ tr:last-child td {
   z-index: 10;
 }
 
+
 .screenshot-preview .delete-btn:hover {
   background: #dc2626;
   transform: scale(1.1);
+}
+
+/* Markdown Preview Styles */
+#md-app-preview h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#md-app-preview h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: white;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+#md-app-preview h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+#md-app-preview p {
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+#md-app-preview ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+#md-app-preview ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+#md-app-preview strong {
+  color: white;
+  font-weight: 700;
+}
+
+#md-app-preview em {
+  color: #cbd5e1;
+  font-style: italic;
+}
+
+#md-app-preview code {
+  background-color: rgba(0, 0, 0, 0.3);
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.25rem;
+  font-family: monospace;
+  color: #f472b6;
+  font-size: 0.9em;
+}
+
+#md-app-preview pre {
+  background-color: rgba(0, 0, 0, 0.3);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin-bottom: 0.5rem;
+}
+
+#md-app-preview pre code {
+  background-color: transparent;
+  padding: 0;
+  color: #e2e8f0;
+}
+
+#md-app-preview blockquote {
+  border-left: 4px solid #3b82f6;
+  padding-left: 1rem;
+  color: #94a3b8;
+  font-style: italic;
+  background: rgba(59, 130, 246, 0.1);
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+  margin-bottom: 0.5rem;
+}
+
+#md-app-preview a {
+  color: #60a5fa;
+  text-decoration: underline;
+}
+
+#md-app-preview a:hover {
+  color: #93c5fd;
 }
