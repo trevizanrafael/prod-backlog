@@ -9,6 +9,9 @@ async function loadHomeModule() {
     // Fetch priority task
     const task = await apiGet('/tasks/priority/top');
 
+    // Fetch all tasks for Kanban
+    const allTasks = await apiGet('/tasks');
+
     // Get current user for SQL Playground check
     const userJson = localStorage.getItem('user');
     const user = userJson ? JSON.parse(userJson) : null;
@@ -309,7 +312,21 @@ async function loadHomeModule() {
         <i class="fas fa-star text-yellow-500 animate-pulse"></i>
         Task Prioritária
       </h2>
+      <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
+        <i class="fas fa-star text-yellow-500 animate-pulse"></i>
+        Task Prioritária
+      </h2>
       ${priorityTaskHtml}
+
+      <!-- Kanban Board Section -->
+      <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-2 mt-12">
+        <i class="fas fa-columns text-primary-400"></i>
+        Quadro Kanban
+      </h2>
+      <div class="overflow-x-auto pb-4 custom-scrollbar">
+          ${renderKanbanBoard(allTasks)}
+      </div>
+
     </div>
     `;
 
@@ -666,4 +683,227 @@ function saveMarkdownNotes(content) {
       }, 2000);
     }
   }, 500);
+}
+
+// Kanban Functions
+
+function renderKanbanBoard(tasks) {
+  const columns = [
+    { id: 'pending', title: 'Pendente', color: 'from-gray-500/20 to-gray-600/5', border: 'border-gray-500/50', icon: 'fa-clock' },
+    { id: 'in_progress', title: 'Em Progresso', color: 'from-blue-500/20 to-blue-600/5', border: 'border-blue-500/50', icon: 'fa-spinner fa-spin-pulse' },
+    { id: 'review', title: 'Code Review', color: 'from-purple-500/20 to-purple-600/5', border: 'border-purple-500/50', icon: 'fa-code-branch' },
+    { id: 'completed', title: 'Concluído', color: 'from-green-500/20 to-green-600/5', border: 'border-green-500/50', icon: 'fa-check-circle' }
+  ];
+
+  // Grid layout instead of flex width fixed width to avoid horizontal scroll on desktop
+  let html = '<div class="grid grid-cols-1 lg:grid-cols-4 gap-4 w-full">';
+
+  columns.forEach(col => {
+
+    const colTasks = tasks.filter(t => {
+      let status = t.kanban_status || 'pending';
+      if (!t.kanban_status && t.completed_at) status = 'completed';
+      return status === col.id;
+    });
+
+    html += `
+      <div class="flex flex-col h-full rounded-2xl bg-gradient-to-b ${col.color} border ${col.border} backdrop-blur-xl shadow-xl overflow-hidden group/col"
+           ondrop="drop(event, '${col.id}')" 
+           ondragover="allowDrop(event)"
+           ondragleave="removeDragHighlight(event)">
+        
+        <!-- Header -->
+        <div class="p-4 border-b border-white/5 flex justify-between items-center bg-black/20 backdrop-blur-md">
+          <div class="flex items-center gap-3">
+             <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shadow-inner">
+                <i class="fas ${col.icon} text-gray-300 text-sm"></i>
+             </div>
+             <h3 class="font-bold text-gray-100 tracking-wide text-sm">${col.title}</h3>
+          </div>
+          <span class="text-xs font-bold bg-white/10 px-2.5 py-1 rounded-full text-white/70 shadow-sm border border-white/5">${colTasks.length}</span>
+        </div>
+
+        <!-- Cards Container -->
+        <div class="p-3 flex-1 space-y-3 min-h-[150px] overflow-y-auto custom-scrollbar bg-black/10">
+          ${colTasks.map(t => renderKanbanCard(t)).join('')}
+          
+          <!-- Drop Placeholder (Visual hint) -->
+          <div class="h-full flex items-center justify-center opacity-0 transition-opacity duration-300 pointer-events-none text-white/5 font-bold uppercase tracking-widest text-xs py-8">
+            Solte aqui
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  html += '</div>';
+  return html;
+}
+
+function renderKanbanCard(task) {
+  const priorityConfig = {
+    high: { color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' },
+    medium: { color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
+    low: { color: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/20' }
+  };
+
+  const pStyle = priorityConfig[task.priority] || priorityConfig['low'];
+  const userInitials = 'U';
+
+  return `
+    <div id="task-${task.id}" 
+         class="relative bg-dark-800/80 backdrop-blur-md p-4 rounded-xl border border-white/5 shadow-lg cursor-grab active:cursor-grabbing hover:border-primary-500/40 hover:shadow-primary-500/10 hover:shadow-xl transition-all duration-300 group hover:-translate-y-1"
+         draggable="true" 
+         ondragstart="drag(event)">
+      
+      <!-- Priority Indicator Line -->
+      <div class="absolute left-0 top-4 bottom-4 w-1 rounded-r-full ${pStyle.bg.replace('/10', '/80')}"></div>
+
+      <div class="pl-3">
+        <div class="flex justify-between items-start mb-2">
+            <span class="text-[10px] font-mono text-gray-500 bg-black/30 px-1.5 py-0.5 rounded">#${pad(task.id)}</span>
+            <div class="flex gap-2">
+                ${task.priority === 'high' ? '<i class="fas fa-fire text-xs text-red-500 animate-bounce" style="animation-duration: 2s"></i>' : ''}
+                <button onclick="viewTask(${task.id})" class="text-gray-400 hover:text-white transition-colors" title="Ver Detalhes">
+                    <i class="fas fa-eye text-xs"></i>
+                </button>
+            </div>
+        </div>
+        
+        <h4 class="text-sm font-semibold text-gray-200 mb-3 group-hover:text-primary-400 transition-colors line-clamp-2 leading-relaxed">
+            ${task.name}
+        </h4>
+        
+        <div class="flex items-center justify-between pt-3 border-t border-white/5">
+            <div class="flex items-center gap-1.5">
+               <div class="w-6 h-6 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-[10px] text-gray-300 border border-white/10 shadow-sm">
+                 ${userInitials}
+               </div>
+               <span class="text-[10px] text-gray-500">${formatDateShort(task.due_date)}</span>
+            </div>
+            
+            <div class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${pStyle.bg} ${pStyle.color} border ${pStyle.border}">
+              ${task.priority}
+            </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Drag functionality variables
+let draggedTaskId = null;
+
+function allowDrop(ev) {
+  ev.preventDefault();
+  ev.currentTarget.classList.add('ring-2', 'ring-primary-400/50', 'bg-white/5');
+}
+
+function removeDragHighlight(ev) {
+  ev.currentTarget.classList.remove('ring-2', 'ring-primary-400/50', 'bg-white/5');
+}
+
+function drag(ev) {
+  // Extract ID from "task-123"
+  draggedTaskId = ev.target.id.replace('task-', '');
+  ev.dataTransfer.setData("text", ev.target.id);
+  ev.dataTransfer.effectAllowed = "move";
+  ev.target.classList.add('opacity-50');
+}
+
+async function drop(ev, newStatus) {
+  ev.preventDefault();
+  ev.currentTarget.classList.remove('ring-2', 'ring-primary-400/50', 'bg-white/5');
+
+  const elementId = ev.dataTransfer.getData("text");
+  const taskElement = document.getElementById(elementId);
+  const targetColumn = ev.currentTarget;
+  const cardsContainer = targetColumn.querySelector('.space-y-3');
+
+  if (taskElement) {
+    taskElement.classList.remove('opacity-50');
+  }
+
+  if (!draggedTaskId || !taskElement) return;
+
+  // Don't do anything if dropping in the same column
+  // We can check by seeing if taskElement is already a child of cardsContainer? 
+  // Or easier: check if current parent column id matches newStatus. 
+  // But we didn't store column id in DOM easily.
+  // Actually we can check if taskElement.parentNode === cardsContainer -> but that might be true if we re-order?
+  // User didn't ask for re-ordering within column, just moving between columns.
+
+  // Let's implement Smooth Move:
+  // 1. Move element to new column immediately (client-side)
+  // 2. Update Backend
+  // 3. If "Completed", show Modal. If canceled, move back.
+
+  const originalParent = taskElement.parentNode;
+
+  if (newStatus === 'completed') {
+    // For Completed, we default to the modal behavior which reloads the page on success.
+    // So we don't move it manually yet, or we move it and if canceled we move back.
+    // Existing completeTask() calls reloadHomeModule() on success.
+    // So if we just call completeTask, it handles the flow.
+    // But Drag-Drop UX: The user drops, card should probably stay or disappear?
+    // Let's let completeTask handle it. It reloads the module, which is "mini f5", but for COMPLETION it's acceptable/expected because of the modal.
+    // The user specifically complained about "moving task" causing f5.
+
+    completeTask(draggedTaskId);
+    return;
+  }
+
+  // Move card in DOM
+  cardsContainer.appendChild(taskElement);
+
+  // Update Counters
+  updateColumnCounters();
+
+  try {
+    // If moving OUT of completed (to pending/progress etc), we need to UNCOMPLETE it in backend
+    // Optimization: We assume if we are here, newStatus != 'completed'.
+
+    // First, silently PATCH completed=false (in case it was completed)
+    // then PUT update kanban status.
+
+    await apiPatch(`/tasks/${draggedTaskId}/complete`, { completed: false });
+    await apiPut(`/tasks/${draggedTaskId}`, { kanban_status: newStatus });
+
+    // Success - do nothing else, DOM is already updated.
+
+  } catch (error) {
+    console.error(error);
+    showNotification('Erro ao mover task. Revertendo...', 'error');
+    // Revert DOM move
+    originalParent.appendChild(taskElement);
+    updateColumnCounters();
+  }
+}
+
+function updateColumnCounters() {
+  document.querySelectorAll('[ondrop]').forEach(col => {
+    const count = col.querySelector('.space-y-3').children.length; // Count task cards (excluding placeholder if any)
+    // Be careful with placeholder div 'Solte aqui'
+    // My render function: 
+    // ${colTasks.map(...).join('')}
+    // <div class="... pointer-events-none ...">Solte aqui</div>
+    // So children.length includes the placeholder.
+    // And placeholder is a div. Cards are divs.
+    // We can filter children that have id starting with task-
+
+    let taskCount = 0;
+    Array.from(col.querySelector('.space-y-3').children).forEach(child => {
+      if (child.id && child.id.startsWith('task-')) {
+        taskCount++;
+      }
+    });
+
+    col.querySelector('span.text-xs.font-bold').innerText = taskCount;
+  });
+}
+
+function formatDateShort(dateString) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
 }
