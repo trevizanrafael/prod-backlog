@@ -323,9 +323,8 @@ async function loadHomeModule() {
         <i class="fas fa-columns text-primary-400"></i>
         Quadro Kanban
       </h2>
-      <div class="overflow-x-auto pb-4 custom-scrollbar">
-          ${renderKanbanBoard(allTasks)}
-      </div>
+      
+      ${renderKanbanBoard(allTasks)}
 
     </div>
     `;
@@ -599,6 +598,7 @@ async function submitComplete(e, taskId) {
     }
 
     showNotification('Task concluída com sucesso!', 'success');
+
     closeCompleteModal();
     loadHomeModule();
   } catch (error) {
@@ -687,50 +687,51 @@ function saveMarkdownNotes(content) {
 
 // Kanban Functions
 
+// ==========================================
+// KANBAN BOARD IMPLEMENTATION
+// ==========================================
+
 function renderKanbanBoard(tasks) {
   const columns = [
-    { id: 'pending', title: 'Pendente', color: 'from-gray-500/20 to-gray-600/5', border: 'border-gray-500/50', icon: 'fa-clock' },
-    { id: 'in_progress', title: 'Em Progresso', color: 'from-blue-500/20 to-blue-600/5', border: 'border-blue-500/50', icon: 'fa-spinner fa-spin-pulse' },
-    { id: 'review', title: 'Code Review', color: 'from-purple-500/20 to-purple-600/5', border: 'border-purple-500/50', icon: 'fa-code-branch' },
-    { id: 'completed', title: 'Concluído', color: 'from-green-500/20 to-green-600/5', border: 'border-green-500/50', icon: 'fa-check-circle' }
+    { id: 'pending', title: 'Pendente', icon: 'fa-regular fa-clock', color: 'border-t-gray-500' },
+    { id: 'in_progress', title: 'Em Progresso', icon: 'fa-solid fa-spinner fa-spin-pulse', color: 'border-t-blue-500' },
+    { id: 'review', title: 'Code Review', icon: 'fa-solid fa-code-branch', color: 'border-t-purple-500' },
+    { id: 'completed', title: 'Concluído', icon: 'fa-solid fa-check-circle', color: 'border-t-green-500' }
   ];
 
-  // Grid layout instead of flex width fixed width to avoid horizontal scroll on desktop
-  let html = '<div class="grid grid-cols-1 lg:grid-cols-4 gap-4 w-full">';
+  // Grid Container
+  let html = '<div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start w-full">';
 
   columns.forEach(col => {
-
+    // Filter tasks
     const colTasks = tasks.filter(t => {
       let status = t.kanban_status || 'pending';
       if (!t.kanban_status && t.completed_at) status = 'completed';
       return status === col.id;
     });
 
+    // Column HTML
     html += `
-      <div class="flex flex-col h-full rounded-2xl bg-gradient-to-b ${col.color} border ${col.border} backdrop-blur-xl shadow-xl overflow-hidden group/col"
-           ondrop="drop(event, '${col.id}')" 
-           ondragover="allowDrop(event)"
-           ondragleave="removeDragHighlight(event)">
+      <div class="kanban-column bg-dark-800/50 rounded-xl border border-white/5 flex flex-col min-h-[500px] transition-colors"
+           data-status="${col.id}"
+           ondragover="kbnOnDragOver(event)"
+           ondragleave="kbnOnDragLeave(event)"
+           ondrop="kbnOnDrop(event)">
         
-        <!-- Header -->
-        <div class="p-4 border-b border-white/5 flex justify-between items-center bg-black/20 backdrop-blur-md">
-          <div class="flex items-center gap-3">
-             <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shadow-inner">
-                <i class="fas ${col.icon} text-gray-300 text-sm"></i>
-             </div>
-             <h3 class="font-bold text-gray-100 tracking-wide text-sm">${col.title}</h3>
-          </div>
-          <span class="text-xs font-bold bg-white/10 px-2.5 py-1 rounded-full text-white/70 shadow-sm border border-white/5">${colTasks.length}</span>
+        <!-- Column Header -->
+        <div class="p-4 border-b border-white/5 ${col.color} border-t-4 rounded-t-xl bg-black/20 flex justify-between items-center">
+           <div class="flex items-center gap-3 font-bold text-gray-200">
+             <i class="${col.icon} text-gray-500"></i>
+             ${col.title}
+           </div>
+           <span class="bg-white/10 text-xs font-mono px-2 py-0.5 rounded text-gray-400">
+             ${colTasks.length}
+           </span>
         </div>
 
-        <!-- Cards Container -->
-        <div class="p-3 flex-1 space-y-3 min-h-[150px] overflow-y-auto custom-scrollbar bg-black/10">
+        <!-- Cards Area -->
+        <div class="kanban-cards-area p-3 flex-1 flex flex-col gap-3">
           ${colTasks.map(t => renderKanbanCard(t)).join('')}
-          
-          <!-- Drop Placeholder (Visual hint) -->
-          <div class="h-full flex items-center justify-center opacity-0 transition-opacity duration-300 pointer-events-none text-white/5 font-bold uppercase tracking-widest text-xs py-8">
-            Solte aqui
-          </div>
         </div>
       </div>
     `;
@@ -741,166 +742,181 @@ function renderKanbanBoard(tasks) {
 }
 
 function renderKanbanCard(task) {
-  const priorityConfig = {
-    high: { color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' },
-    medium: { color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
-    low: { color: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/20' }
+  // Priority Styles
+  const priorities = {
+    high: { border: 'border-red-500/50', text: 'text-red-400', icon: 'fa-fire' },
+    medium: { border: 'border-orange-500/50', text: 'text-orange-400', icon: 'fa-exclamation' },
+    low: { border: 'border-green-500/50', text: 'text-green-400', icon: 'fa-arrow-down' }
   };
-
-  const pStyle = priorityConfig[task.priority] || priorityConfig['low'];
-  const userInitials = 'U';
+  const p = priorities[task.priority] || priorities.low;
 
   return `
-    <div id="task-${task.id}" 
-         class="relative bg-dark-800/80 backdrop-blur-md p-4 rounded-xl border border-white/5 shadow-lg cursor-grab active:cursor-grabbing hover:border-primary-500/40 hover:shadow-primary-500/10 hover:shadow-xl transition-all duration-300 group hover:-translate-y-1"
-         draggable="true" 
-         ondragstart="drag(event)">
-      
-      <!-- Priority Indicator Line -->
-      <div class="absolute left-0 top-4 bottom-4 w-1 rounded-r-full ${pStyle.bg.replace('/10', '/80')}"></div>
-
-      <div class="pl-3">
-        <div class="flex justify-between items-start mb-2">
-            <span class="text-[10px] font-mono text-gray-500 bg-black/30 px-1.5 py-0.5 rounded">#${pad(task.id)}</span>
-            <div class="flex gap-2">
-                ${task.priority === 'high' ? '<i class="fas fa-fire text-xs text-red-500 animate-bounce" style="animation-duration: 2s"></i>' : ''}
-                <button onclick="viewTask(${task.id})" class="text-gray-400 hover:text-white transition-colors" title="Ver Detalhes">
-                    <i class="fas fa-eye text-xs"></i>
-                </button>
+    <div id="card-${task.id}" 
+         class="kanban-card bg-dark-900 border border-white/5 p-4 rounded-lg cursor-grab hover:border-primary-500/50 hover:shadow-lg transition-all relative group"
+         draggable="true"
+         ondragstart="kbnOnDragStart(event)"
+         ondragend="kbnOnDragEnd(event)">
+         
+         <div class="flex justify-between items-start mb-2">
+            <span class="text-xs font-mono text-gray-600">#${pad(task.id)}</span>
+            <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+               <button onclick="viewTask(${task.id})" class="text-gray-400 hover:text-primary-400" title="Ver Detalhes">
+                 <i class="fas fa-eye"></i>
+               </button>
             </div>
-        </div>
-        
-        <h4 class="text-sm font-semibold text-gray-200 mb-3 group-hover:text-primary-400 transition-colors line-clamp-2 leading-relaxed">
-            ${task.name}
-        </h4>
-        
-        <div class="flex items-center justify-between pt-3 border-t border-white/5">
-            <div class="flex items-center gap-1.5">
-               <div class="w-6 h-6 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-[10px] text-gray-300 border border-white/10 shadow-sm">
-                 ${userInitials}
+         </div>
+
+         <div class="mb-3">
+           <h4 class="text-sm font-semibold text-gray-200 line-clamp-2">${task.name}</h4>
+         </div>
+
+         <div class="flex justify-between items-center pt-3 border-t border-white/5">
+            <div class="flex items-center gap-2">
+               <!-- Initial Avatar -->
+               <div class="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-[10px] text-gray-400 border border-white/5">
+                 U
                </div>
                <span class="text-[10px] text-gray-500">${formatDateShort(task.due_date)}</span>
             </div>
             
-            <div class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${pStyle.bg} ${pStyle.color} border ${pStyle.border}">
+            <div class="flex items-center gap-1 ${p.text} text-xs font-bold uppercase tracking-wider bg-white/5 px-2 py-0.5 rounded border border-white/5">
               ${task.priority}
             </div>
-        </div>
-      </div>
+         </div>
     </div>
   `;
 }
 
-// Drag functionality variables
-let draggedTaskId = null;
+// ==========================================
+// DRAG AND DROP LOGIC
+// ==========================================
 
-function allowDrop(ev) {
-  ev.preventDefault();
-  ev.currentTarget.classList.add('ring-2', 'ring-primary-400/50', 'bg-white/5');
-}
+let draggedCard = null;
+let dragOrigin = { parent: null, sibling: null, card: null }; // For reverting
 
-function removeDragHighlight(ev) {
-  ev.currentTarget.classList.remove('ring-2', 'ring-primary-400/50', 'bg-white/5');
-}
+function kbnOnDragStart(ev) {
+  draggedCard = ev.currentTarget;
+  // Snapshot origin for revert
+  dragOrigin = {
+    parent: ev.currentTarget.parentNode,
+    sibling: ev.currentTarget.nextElementSibling,
+    card: ev.currentTarget
+  };
 
-function drag(ev) {
-  // Extract ID from "task-123"
-  draggedTaskId = ev.target.id.replace('task-', '');
-  ev.dataTransfer.setData("text", ev.target.id);
+  ev.dataTransfer.setData("text/plain", ev.currentTarget.id);
   ev.dataTransfer.effectAllowed = "move";
-  ev.target.classList.add('opacity-50');
+
+  // Visual feedback
+  setTimeout(() => {
+    ev.target.classList.add('opacity-50', 'scale-95');
+  }, 0);
 }
 
-async function drop(ev, newStatus) {
-  ev.preventDefault();
-  ev.currentTarget.classList.remove('ring-2', 'ring-primary-400/50', 'bg-white/5');
+function kbnOnDragEnd(ev) {
+  ev.target.classList.remove('opacity-50', 'scale-95');
+  draggedCard = null;
 
-  const elementId = ev.dataTransfer.getData("text");
-  const taskElement = document.getElementById(elementId);
-  const targetColumn = ev.currentTarget;
-  const cardsContainer = targetColumn.querySelector('.space-y-3');
+  // Clean up highlights
+  document.querySelectorAll('.kanban-column').forEach(col => {
+    col.classList.remove('bg-white/5', 'ring-2', 'ring-primary-500/20');
+  });
+}
 
-  if (taskElement) {
-    taskElement.classList.remove('opacity-50');
+function kbnOnDragOver(ev) {
+  ev.preventDefault(); // Allow drop
+  const column = ev.currentTarget;
+  const cardsArea = column.querySelector('.kanban-cards-area');
+
+  // Highlight column
+  column.classList.add('bg-white/5', 'ring-2', 'ring-primary-500/20');
+
+  // Live Sorting Logic
+  const afterElement = getDragAfterElement(cardsArea, ev.clientY);
+  const draggable = document.querySelector('.kanban-card.opacity-50'); // The one being dragged
+
+  if (draggable) {
+    if (afterElement == null) {
+      cardsArea.appendChild(draggable);
+    } else {
+      cardsArea.insertBefore(draggable, afterElement);
+    }
   }
+}
 
-  if (!draggedTaskId || !taskElement) return;
+function kbnOnDragLeave(ev) {
+  const column = ev.currentTarget;
+  // Only remove if we really left the column (not just entered a child)
+  // Simple way: remove highlight, dragover will re-add if still there
+  column.classList.remove('bg-white/5', 'ring-2', 'ring-primary-500/20');
+}
 
-  // Don't do anything if dropping in the same column
-  // We can check by seeing if taskElement is already a child of cardsContainer? 
-  // Or easier: check if current parent column id matches newStatus. 
-  // But we didn't store column id in DOM easily.
-  // Actually we can check if taskElement.parentNode === cardsContainer -> but that might be true if we re-order?
-  // User didn't ask for re-ordering within column, just moving between columns.
+async function kbnOnDrop(ev) {
+  ev.preventDefault();
+  const column = ev.currentTarget;
+  column.classList.remove('bg-white/5', 'ring-2', 'ring-primary-500/20');
 
-  // Let's implement Smooth Move:
-  // 1. Move element to new column immediately (client-side)
-  // 2. Update Backend
-  // 3. If "Completed", show Modal. If canceled, move back.
+  const cardId = ev.dataTransfer.getData("text/plain").replace('card-', '');
+  const newStatus = column.getAttribute('data-status');
 
-  const originalParent = taskElement.parentNode;
+  // Counter update (Frontend only initially)
+  updateKanbanCounters();
 
+  if (!cardId) return;
+
+  // Handle "Completed" Logic
   if (newStatus === 'completed') {
-    // For Completed, we default to the modal behavior which reloads the page on success.
-    // So we don't move it manually yet, or we move it and if canceled we move back.
-    // Existing completeTask() calls reloadHomeModule() on success.
-    // So if we just call completeTask, it handles the flow.
-    // But Drag-Drop UX: The user drops, card should probably stay or disappear?
-    // Let's let completeTask handle it. It reloads the module, which is "mini f5", but for COMPLETION it's acceptable/expected because of the modal.
-    // The user specifically complained about "moving task" causing f5.
 
-    completeTask(draggedTaskId);
+    // IMMEDIATE REVERT: Task only moves if confirmed.
+    // So we move it back to start position now.
+    if (dragOrigin.card && dragOrigin.parent) {
+      if (dragOrigin.sibling) {
+        dragOrigin.parent.insertBefore(dragOrigin.card, dragOrigin.sibling);
+      } else {
+        dragOrigin.parent.appendChild(dragOrigin.card);
+      }
+      updateKanbanCounters();
+    }
+
+    completeTask(cardId);
     return;
   }
 
-  // Move card in DOM
-  cardsContainer.appendChild(taskElement);
-
-  // Update Counters
-  updateColumnCounters();
-
   try {
-    // If moving OUT of completed (to pending/progress etc), we need to UNCOMPLETE it in backend
-    // Optimization: We assume if we are here, newStatus != 'completed'.
+    // If moving to non-completed, ensure it's uncompleted in DB
+    // We do strictly sequential await to avoid race conditions or errors
+    await apiPatch(`/tasks/${cardId}/complete`, { completed: false });
+    await apiPut(`/tasks/${cardId}`, { kanban_status: newStatus });
 
-    // First, silently PATCH completed=false (in case it was completed)
-    // then PUT update kanban status.
-
-    await apiPatch(`/tasks/${draggedTaskId}/complete`, { completed: false });
-    await apiPut(`/tasks/${draggedTaskId}`, { kanban_status: newStatus });
-
-    // Success - do nothing else, DOM is already updated.
-
+    // Success
   } catch (error) {
-    console.error(error);
-    showNotification('Erro ao mover task. Revertendo...', 'error');
-    // Revert DOM move
-    originalParent.appendChild(taskElement);
-    updateColumnCounters();
+    console.error("Drop Error:", error);
+    showNotification('Erro ao atualizar status', 'error');
+    loadHomeModule(); // Revert on error
   }
 }
 
-function updateColumnCounters() {
-  document.querySelectorAll('[ondrop]').forEach(col => {
-    const count = col.querySelector('.space-y-3').children.length; // Count task cards (excluding placeholder if any)
-    // Be careful with placeholder div 'Solte aqui'
-    // My render function: 
-    // ${colTasks.map(...).join('')}
-    // <div class="... pointer-events-none ...">Solte aqui</div>
-    // So children.length includes the placeholder.
-    // And placeholder is a div. Cards are divs.
-    // We can filter children that have id starting with task-
+// Utility for sorting
+function getDragAfterElement(container, y) {
+  const draggableElements = [...container.querySelectorAll('.kanban-card:not(.opacity-50)')];
 
-    let taskCount = 0;
-    Array.from(col.querySelector('.space-y-3').children).forEach(child => {
-      if (child.id && child.id.startsWith('task-')) {
-        taskCount++;
-      }
-    });
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > closest.offset) {
+      return { offset: offset, element: child };
+    } else {
+      return closest;
+    }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
 
-    col.querySelector('span.text-xs.font-bold').innerText = taskCount;
+function updateKanbanCounters() {
+  document.querySelectorAll('.kanban-column').forEach(col => {
+    const count = col.querySelectorAll('.kanban-card').length;
+    col.querySelector('span.font-mono').textContent = count;
   });
 }
+
 
 function formatDateShort(dateString) {
   if (!dateString) return '';
