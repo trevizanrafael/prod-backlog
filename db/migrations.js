@@ -79,6 +79,7 @@ async function runMigrations() {
     try {
       await db.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS time_spent INTEGER DEFAULT 0;`);
       await db.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS resolution_notes TEXT;`);
+      await db.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS kanban_status VARCHAR(50) DEFAULT 'pending';`); // Kanban support
       await db.query(`ALTER TABLE task_screenshots ADD COLUMN IF NOT EXISTS type VARCHAR(50) DEFAULT 'problem';`);
       console.log('✅ Schema updated with new columns');
     } catch (err) {

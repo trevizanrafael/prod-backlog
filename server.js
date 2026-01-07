@@ -156,7 +156,7 @@ app.delete('/api/scopes/:id', async (req, res) => {
 // Get all tasks with optional filters
 app.get('/api/tasks', async (req, res) => {
     try {
-        const { scope_id, priority, complexity, status, start_date, end_date } = req.query;
+        const { scope_id, priority, complexity, status, start_date, end_date, kanban_status } = req.query;
 
         let query = `
       SELECT t.*, s.name as scope_name,
@@ -201,6 +201,12 @@ app.get('/api/tasks', async (req, res) => {
         if (end_date) {
             query += ` AND t.due_date <= $${paramCount}`;
             params.push(end_date);
+            paramCount++;
+        }
+
+        if (kanban_status) {
+            query += ` AND t.kanban_status = $${paramCount}`;
+            params.push(kanban_status);
             paramCount++;
         }
 
@@ -256,7 +262,8 @@ app.post('/api/tasks', async (req, res) => {
             due_date,
             complexity,
             priority,
-            scope_id
+            scope_id,
+            kanban_status
         } = req.body;
 
         if (!name || !due_date || !complexity || !priority) {
@@ -265,10 +272,10 @@ app.post('/api/tasks', async (req, res) => {
 
         const result = await db.query(
             `INSERT INTO tasks 
-       (name, description_problem, description_solution, due_date, complexity, priority, scope_id, time_spent)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 0)
+       (name, description_problem, description_solution, due_date, complexity, priority, scope_id, time_spent, kanban_status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 0, $8)
        RETURNING *`,
-            [name, description_problem, description_solution, due_date, complexity, priority, scope_id || null]
+            [name, description_problem, description_solution, due_date, complexity, priority, scope_id || null, kanban_status || 'pending']
         );
 
         res.status(201).json(result.rows[0]);
@@ -291,17 +298,25 @@ app.put('/api/tasks/:id', async (req, res) => {
             priority,
             scope_id,
             time_spent,
-            resolution_notes
+            resolution_notes,
+            kanban_status
         } = req.body;
 
         const result = await db.query(
             `UPDATE tasks 
-       SET name = $1, description_problem = $2, description_solution = $3,
-           due_date = $4, complexity = $5, priority = $6, scope_id = $7,
-           time_spent = COALESCE($8, time_spent), resolution_notes = COALESCE($9, resolution_notes)
-       WHERE id = $10
+       SET name = COALESCE($1, name), 
+           description_problem = COALESCE($2, description_problem), 
+           description_solution = COALESCE($3, description_solution),
+           due_date = COALESCE($4, due_date), 
+           complexity = COALESCE($5, complexity), 
+           priority = COALESCE($6, priority), 
+           scope_id = COALESCE($7, scope_id),
+           time_spent = COALESCE($8, time_spent), 
+           resolution_notes = COALESCE($9, resolution_notes),
+           kanban_status = COALESCE($10, kanban_status)
+       WHERE id = $11
        RETURNING *`,
-            [name, description_problem, description_solution, due_date, complexity, priority, scope_id || null, time_spent, resolution_notes, id]
+            [name, description_problem, description_solution, due_date, complexity, priority, scope_id, time_spent, resolution_notes, kanban_status, id]
         );
 
         if (result.rows.length === 0) {
@@ -347,6 +362,12 @@ app.patch('/api/tasks/:id/complete', async (req, res) => {
 
         let query = 'UPDATE tasks SET completed_at = $1';
         const params = [completedAt, id];
+
+        if (completed) {
+            query = 'UPDATE tasks SET completed_at = $1, kanban_status = \'completed\'';
+        } else {
+            query = 'UPDATE tasks SET completed_at = $1, kanban_status = \'pending\''; // Reset to pending if uncompleted
+        }
 
         if (resolution_notes !== undefined) {
             query += ', resolution_notes = $2';

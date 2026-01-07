@@ -9,6 +9,9 @@ async function loadHomeModule() {
     // Fetch priority task
     const task = await apiGet('/tasks/priority/top');
 
+    // Fetch all tasks for Kanban
+    const allTasks = await apiGet('/tasks');
+
     // Get current user for SQL Playground check
     const userJson = localStorage.getItem('user');
     const user = userJson ? JSON.parse(userJson) : null;
@@ -310,6 +313,15 @@ async function loadHomeModule() {
         Task Prioritária
       </h2>
       ${priorityTaskHtml}
+
+      <!-- Kanban Board Section -->
+      <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-2 mt-12">
+        <i class="fas fa-columns text-primary-400"></i>
+        Quadro Kanban
+      </h2>
+      
+      ${renderKanbanBoard(allTasks)}
+
     </div>
     `;
 
@@ -582,6 +594,7 @@ async function submitComplete(e, taskId) {
     }
 
     showNotification('Task concluída com sucesso!', 'success');
+
     closeCompleteModal();
     loadHomeModule();
   } catch (error) {
@@ -666,4 +679,243 @@ function saveMarkdownNotes(content) {
       }, 2000);
     }
   }, 500);
+}
+
+// Kanban Functions
+
+// ==========================================
+// KANBAN BOARD IMPLEMENTATION
+// ==========================================
+
+function renderKanbanBoard(tasks) {
+  const columns = [
+    { id: 'pending', title: 'Pendente', icon: 'fa-regular fa-clock', color: 'border-t-gray-500' },
+    { id: 'in_progress', title: 'Em Progresso', icon: 'fa-solid fa-spinner fa-spin-pulse', color: 'border-t-blue-500' },
+    { id: 'review', title: 'Code Review', icon: 'fa-solid fa-code-branch', color: 'border-t-purple-500' },
+    { id: 'completed', title: 'Concluído', icon: 'fa-solid fa-check-circle', color: 'border-t-green-500' }
+  ];
+
+  // Grid Container
+  let html = '<div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start w-full">';
+
+  columns.forEach(col => {
+    // Filter tasks
+    const colTasks = tasks.filter(t => {
+      let status = t.kanban_status || 'pending';
+      if (!t.kanban_status && t.completed_at) status = 'completed';
+      return status === col.id;
+    });
+
+    // Column HTML
+    html += `
+      <div class="kanban-column bg-dark-800/50 rounded-xl border border-white/5 flex flex-col min-h-[500px] transition-colors"
+           data-status="${col.id}"
+           ondragover="kbnOnDragOver(event)"
+           ondragleave="kbnOnDragLeave(event)"
+           ondrop="kbnOnDrop(event)">
+        
+        <!-- Column Header -->
+        <div class="p-4 border-b border-white/5 ${col.color} border-t-4 rounded-t-xl bg-black/20 flex justify-between items-center">
+           <div class="flex items-center gap-3 font-bold text-gray-200">
+             <i class="${col.icon} text-gray-500"></i>
+             ${col.title}
+           </div>
+           <span class="bg-white/10 text-xs font-mono px-2 py-0.5 rounded text-gray-400">
+             ${colTasks.length}
+           </span>
+        </div>
+
+        <!-- Cards Area -->
+        <div class="kanban-cards-area p-3 flex-1 flex flex-col gap-3">
+          ${colTasks.map(t => renderKanbanCard(t)).join('')}
+        </div>
+      </div>
+    `;
+  });
+
+  html += '</div>';
+  return html;
+}
+
+function renderKanbanCard(task) {
+  // Priority Styles
+  const priorities = {
+    high: { border: 'border-red-500/50', text: 'text-red-400', icon: 'fa-fire' },
+    medium: { border: 'border-orange-500/50', text: 'text-orange-400', icon: 'fa-exclamation' },
+    low: { border: 'border-green-500/50', text: 'text-green-400', icon: 'fa-arrow-down' }
+  };
+  const p = priorities[task.priority] || priorities.low;
+
+  return `
+    <div id="card-${task.id}" 
+         class="kanban-card bg-dark-900 border border-white/5 p-4 rounded-lg cursor-grab hover:border-primary-500/50 hover:shadow-lg transition-all relative group"
+         draggable="true"
+         ondragstart="kbnOnDragStart(event)"
+         ondragend="kbnOnDragEnd(event)">
+         
+         <div class="flex justify-between items-start mb-2">
+            <span class="text-xs font-mono text-gray-600">#${pad(task.id)}</span>
+            <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+               <button onclick="viewTask(${task.id})" class="text-gray-400 hover:text-primary-400" title="Ver Detalhes">
+                 <i class="fas fa-eye"></i>
+               </button>
+            </div>
+         </div>
+
+         <div class="mb-3">
+           <h4 class="text-sm font-semibold text-gray-200 line-clamp-2">${task.name}</h4>
+         </div>
+
+         <div class="flex justify-between items-center pt-3 border-t border-white/5">
+            <div class="flex items-center gap-2">
+               <!-- Initial Avatar -->
+               <div class="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-[10px] text-gray-400 border border-white/5">
+                 U
+               </div>
+               <span class="text-[10px] text-gray-500">${formatDateShort(task.due_date)}</span>
+            </div>
+            
+            <div class="flex items-center gap-1 ${p.text} text-xs font-bold uppercase tracking-wider bg-white/5 px-2 py-0.5 rounded border border-white/5">
+              ${task.priority}
+            </div>
+         </div>
+    </div>
+  `;
+}
+
+// ==========================================
+// DRAG AND DROP LOGIC
+// ==========================================
+
+let draggedCard = null;
+let dragOrigin = { parent: null, sibling: null, card: null }; // For reverting
+
+function kbnOnDragStart(ev) {
+  draggedCard = ev.currentTarget;
+  // Snapshot origin for revert
+  dragOrigin = {
+    parent: ev.currentTarget.parentNode,
+    sibling: ev.currentTarget.nextElementSibling,
+    card: ev.currentTarget
+  };
+
+  ev.dataTransfer.setData("text/plain", ev.currentTarget.id);
+  ev.dataTransfer.effectAllowed = "move";
+
+  // Visual feedback
+  setTimeout(() => {
+    ev.target.classList.add('opacity-50', 'scale-95');
+  }, 0);
+}
+
+function kbnOnDragEnd(ev) {
+  ev.target.classList.remove('opacity-50', 'scale-95');
+  draggedCard = null;
+
+  // Clean up highlights
+  document.querySelectorAll('.kanban-column').forEach(col => {
+    col.classList.remove('bg-white/5', 'ring-2', 'ring-primary-500/20');
+  });
+}
+
+function kbnOnDragOver(ev) {
+  ev.preventDefault(); // Allow drop
+  const column = ev.currentTarget;
+  const cardsArea = column.querySelector('.kanban-cards-area');
+
+  // Highlight column
+  column.classList.add('bg-white/5', 'ring-2', 'ring-primary-500/20');
+
+  // Live Sorting Logic
+  const afterElement = getDragAfterElement(cardsArea, ev.clientY);
+  const draggable = document.querySelector('.kanban-card.opacity-50'); // The one being dragged
+
+  if (draggable) {
+    if (afterElement == null) {
+      cardsArea.appendChild(draggable);
+    } else {
+      cardsArea.insertBefore(draggable, afterElement);
+    }
+  }
+}
+
+function kbnOnDragLeave(ev) {
+  const column = ev.currentTarget;
+  // Only remove if we really left the column (not just entered a child)
+  // Simple way: remove highlight, dragover will re-add if still there
+  column.classList.remove('bg-white/5', 'ring-2', 'ring-primary-500/20');
+}
+
+async function kbnOnDrop(ev) {
+  ev.preventDefault();
+  const column = ev.currentTarget;
+  column.classList.remove('bg-white/5', 'ring-2', 'ring-primary-500/20');
+
+  const cardId = ev.dataTransfer.getData("text/plain").replace('card-', '');
+  const newStatus = column.getAttribute('data-status');
+
+  // Counter update (Frontend only initially)
+  updateKanbanCounters();
+
+  if (!cardId) return;
+
+  // Handle "Completed" Logic
+  if (newStatus === 'completed') {
+
+    // IMMEDIATE REVERT: Task only moves if confirmed.
+    // So we move it back to start position now.
+    if (dragOrigin.card && dragOrigin.parent) {
+      if (dragOrigin.sibling) {
+        dragOrigin.parent.insertBefore(dragOrigin.card, dragOrigin.sibling);
+      } else {
+        dragOrigin.parent.appendChild(dragOrigin.card);
+      }
+      updateKanbanCounters();
+    }
+
+    completeTask(cardId);
+    return;
+  }
+
+  try {
+    // If moving to non-completed, ensure it's uncompleted in DB
+    // We do strictly sequential await to avoid race conditions or errors
+    await apiPatch(`/tasks/${cardId}/complete`, { completed: false });
+    await apiPut(`/tasks/${cardId}`, { kanban_status: newStatus });
+
+    // Success
+  } catch (error) {
+    console.error("Drop Error:", error);
+    showNotification('Erro ao atualizar status', 'error');
+    loadHomeModule(); // Revert on error
+  }
+}
+
+// Utility for sorting
+function getDragAfterElement(container, y) {
+  const draggableElements = [...container.querySelectorAll('.kanban-card:not(.opacity-50)')];
+
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > closest.offset) {
+      return { offset: offset, element: child };
+    } else {
+      return closest;
+    }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function updateKanbanCounters() {
+  document.querySelectorAll('.kanban-column').forEach(col => {
+    const count = col.querySelectorAll('.kanban-card').length;
+    col.querySelector('span.font-mono').textContent = count;
+  });
+}
+
+
+function formatDateShort(dateString) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
 }
