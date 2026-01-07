@@ -4,12 +4,21 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
+const http = require('http');
+const { Server } = require("socket.io");
 
 const db = require('./db/database');
 const { runMigrations } = require('./db/migrations');
 const { authenticateToken, checkPermission, bcrypt, jwt, JWT_SECRET } = require('./auth');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: "*", // Allow all origins for simplicity in this demo
+        methods: ["GET", "POST"]
+    }
+});
 const PORT = process.env.PORT || 3000;
 
 // Middleware
@@ -688,6 +697,33 @@ app.post('/api/admin/sql', authenticateToken, async (req, res) => {
     }
 });
 
+// ==================== SOCKET.IO LOGIC ====================
+
+io.on('connection', (socket) => {
+    console.log('User connected:', socket.id);
+
+    // Join a specific room
+    socket.on('join-room', (roomId, userId) => {
+        console.log(`User ${userId} joining room ${roomId}`);
+        socket.join(roomId);
+        socket.broadcast.to(roomId).emit('user-connected', userId);
+
+        socket.on('disconnect', () => {
+            console.log(`User ${userId} disconnected`);
+            socket.broadcast.to(roomId).emit('user-disconnected', userId);
+        });
+    });
+
+    // Handle signaling data (WebRTC)
+    // data contains: target (socketId), signal (SDP/candidate), callerId
+    socket.on('signal', (data) => {
+        io.to(data.target).emit('signal', {
+            signal: data.signal,
+            callerId: data.callerId
+        });
+    });
+});
+
 // ==================== SERVER INITIALIZATION ====================
 
 // Initialize server
@@ -696,8 +732,8 @@ async function startServer() {
         // Run database migrations
         await runMigrations();
 
-        // Start Express server
-        app.listen(PORT, () => {
+        // Start HTTP server (which wraps Express)
+        server.listen(PORT, () => {
             console.log(`\n🚀 Server running on http://localhost:${PORT}`);
             console.log(`📊 Dashboard: http://localhost:${PORT}`);
             console.log(`🔗 API: http://localhost:${PORT}/api`);
