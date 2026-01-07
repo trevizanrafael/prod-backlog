@@ -312,10 +312,6 @@ async function loadHomeModule() {
         <i class="fas fa-star text-yellow-500 animate-pulse"></i>
         Task Prioritária
       </h2>
-      <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
-        <i class="fas fa-star text-yellow-500 animate-pulse"></i>
-        Task Prioritária
-      </h2>
       ${priorityTaskHtml}
 
       <!-- Kanban Board Section -->
