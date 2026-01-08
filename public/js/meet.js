@@ -403,11 +403,15 @@ function addVideoStream(stream, userId, isLocal, metadata) {
                 if (c !== div) c.classList.add('hidden-by-pin');
             });
         }
+
+        updateLayout();
     });
 
     videoGrid.appendChild(div);
     const video = document.getElementById(`video-${userId}`);
     video.srcObject = stream;
+
+    updateLayout();
 }
 
 function removeVideoElement(userId) {
@@ -421,6 +425,36 @@ function removeVideoElement(userId) {
         }
         wrapper.remove();
     }
+
+    // Call layout update after removal
+    setTimeout(updateLayout, 50);
+}
+
+function updateLayout() {
+    const videoCards = document.querySelectorAll('.video-card:not(.hidden-by-pin)');
+    const count = videoCards.length;
+    const grid = document.getElementById('videoGrid');
+
+    if (!grid) return;
+
+    // Reset classes (maintain base class)
+    grid.className = 'video-grid';
+
+    // Check if any card is pinned
+    const pinned = document.querySelector('.video-card.pinned');
+    if (pinned) {
+        grid.classList.add('grid-1'); // Treating pinned view as single item grid
+        return;
+    }
+
+    // Apply grid class based on visible count
+    if (count <= 1) grid.classList.add('grid-1');
+    else if (count === 2) grid.classList.add('grid-2');
+    else if (count <= 3) grid.classList.add('grid-3');
+    else if (count <= 4) grid.classList.add('grid-4');
+    else if (count <= 6) grid.classList.add('grid-5-6');
+    else if (count <= 9) grid.classList.add('grid-7-9');
+    else grid.classList.add('grid-many');
 }
 
 // Initialize

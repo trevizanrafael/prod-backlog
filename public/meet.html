@@ -80,17 +80,60 @@
             align-items: center;
         }
 
-        /* Video Grid Styling Fixed for Zoom/Scroll Issue */
+        /* Video Grid Styling - Dynamic Grid */
         .video-grid {
             flex: 1;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: center;
-            gap: 1.5rem;
-            padding: 2rem;
-            overflow-y: auto;
+            display: grid;
+            gap: 1rem;
+            /* Reduced gap */
+            padding: 1rem;
+            /* Reduced padding */
             width: 100%;
+            height: calc(100vh - 80px);
+            /* Adjusted */
+            place-content: center;
+            margin: 0 auto;
+            box-sizing: border-box;
+            /* IMPORTANT */
+        }
+
+        /* Dynamic Grid Classes (applied by JS) */
+        .video-grid.grid-1 {
+            grid-template-columns: 1fr;
+            max-width: 1200px;
+        }
+
+        .video-grid.grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+            max-width: 1400px;
+        }
+
+        .video-grid.grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+            max-width: 100%;
+        }
+
+        .video-grid.grid-4 {
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            max-height: 90vh;
+            max-width: 1400px;
+        }
+
+        .video-grid.grid-5-6 {
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            max-width: 100%;
+        }
+
+        .video-grid.grid-7-9 {
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            max-width: 100%;
+        }
+
+        .video-grid.grid-many {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         }
 
         .video-card {
@@ -102,18 +145,13 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
 
-            /* Sizing logic */
+            /* Reset sizing to fill grid cell */
             width: 100%;
-            max-width: 1000px;
+            height: 100%;
             aspect-ratio: 16/9;
-            max-height: 70vh;
-        }
-
-        /* Responsive sizing */
-        .video-card:nth-last-child(n+2),
-        .video-card:nth-last-child(n+2)~.video-card {
-            flex: 1 1 45%;
-            max-width: 800px;
+            /* Maintain aspect ratio preference */
+            max-width: none;
+            max-height: none;
         }
 
         .video-card:hover {
