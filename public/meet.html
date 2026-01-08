@@ -1,38 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meet - Video Room</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-dark: #0f172a;
-            --glass-bg: rgba(30, 41, 59, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --accent: #3b82f6;
-            --text: #f8fafc;
-        }
+    <title>Meet - Backlog System</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <style>
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text);
-            margin: 0;
             height: 100vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+            font-family: 'Outfit', sans-serif;
         }
 
-        .header {
+        .meet-header {
             padding: 1rem 2rem;
-            background: var(--glass-bg);
-            border-bottom: 1px solid var(--glass-border);
+            background: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            z-index: 10;
+        }
+
+        /* Branding Styles matching Home */
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .brand-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 0.75rem;
+            background: linear-gradient(135deg, #3b82f6 0%, #9333ea 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
+            color: white;
+            font-size: 1.25rem;
+        }
+
+        .brand-text h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            line-height: 1;
+            margin: 0;
+            letter-spacing: -0.025em;
+        }
+
+        .brand-text span {
+            color: #60a5fa;
+        }
+
+        .brand-text p {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            margin: 0;
+            text-transform: uppercase;
         }
 
         .room-controls {
@@ -41,143 +80,277 @@
             align-items: center;
         }
 
-        input {
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid var(--glass-border);
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            color: white;
-            outline: none;
-        }
-
-        button {
-            background: var(--accent);
-            border: none;
-            padding: 0.5rem 1.5rem;
-            color: white;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-
-        button:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
-
+        /* Video Grid Styling Fixed for Zoom/Scroll Issue */
         .video-grid {
             flex: 1;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 1.5rem;
             padding: 2rem;
             overflow-y: auto;
+            width: 100%;
         }
 
         .video-card {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 1.5rem;
             overflow: hidden;
             position: relative;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+
+            /* Sizing logic */
+            width: 100%;
+            max-width: 1000px;
             aspect-ratio: 16/9;
+            max-height: 70vh;
+        }
+
+        /* Responsive sizing */
+        .video-card:nth-last-child(n+2),
+        .video-card:nth-last-child(n+2)~.video-card {
+            flex: 1 1 45%;
+            max-width: 800px;
+        }
+
+        .video-card:hover {
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+            transform: translateY(-4px);
         }
 
         video {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transform: scaleX(-1); /* Mirror effect */
+            transform: scaleX(-1);
         }
 
         .user-label {
             position: absolute;
             bottom: 1rem;
             left: 1rem;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 0.25rem 0.75rem;
-            border-radius: 4px;
+            background: rgba(15, 23, 42, 0.8);
+            color: white;
+            padding: 0.35rem 1rem;
+            border-radius: 9999px;
             font-size: 0.875rem;
+            font-weight: 500;
             backdrop-filter: blur(4px);
-        }
-
-        .room-status {
-            color: #4ade80;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            font-size: 0.9rem;
         }
-        
+
+        .user-label i {
+            font-size: 0.75rem;
+            color: #4ade80;
+        }
+
+        /* Room Status Pill */
+        .room-status {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(52, 211, 153, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            color: #34d399;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            animation: fadeIn 0.5s ease-out;
+        }
+
         .status-dot {
             width: 8px;
             height: 8px;
-            background-color: #4ade80;
+            background-color: #34d399;
             border-radius: 50%;
-            box-shadow: 0 0 8px #4ade80;
+            box-shadow: 0 0 12px rgba(52, 211, 153, 0.6);
+            animation: pulse 2s infinite;
         }
 
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 6px rgba(52, 211, 153, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(52, 211, 153, 0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Controls Bar */
         .controls-bar {
             position: fixed;
-            bottom: 2rem;
+            bottom: 2.5rem;
             left: 50%;
             transform: translateX(-50%);
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             padding: 1rem 2rem;
-            border-radius: 9999px;
+            border-radius: 2rem;
             display: flex;
             gap: 1.5rem;
-            z-index: 100;
+            z-index: 50;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .controls-bar:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            background: rgba(15, 23, 42, 0.9);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
         }
 
         .control-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid transparent;
-            width: 50px;
-            height: 50px;
+            background: rgba(51, 65, 85, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.2s;
-            padding: 0;
-            color: white;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #e2e8f0;
+            font-size: 1.25rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .control-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.2s;
         }
 
         .control-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: scale(1.1);
-        }
-
-        .control-btn.active-off {
-            background: #ef4444;
+            transform: translateY(-2px);
+            background: rgba(71, 85, 105, 0.8);
             color: white;
-            border-color: #ef4444;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
         }
 
-        .leave-btn {
-            background: #ef4444;
+        .control-btn:hover::after {
+            opacity: 1;
         }
-        
+
+        .control-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Active/Off States */
+        .control-btn.active-off {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border-color: rgba(239, 68, 68, 0.4);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.1);
+        }
+
+        .control-btn.active-off:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        /* Leave Button */
+        .leave-btn {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border: none;
+            width: 70px;
+            border-radius: 2rem;
+        }
+
         .leave-btn:hover {
-            background: #dc2626;
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+
+        /* Tooltip */
+        .control-btn[title]:hover::before {
+            content: attr(title);
+            position: absolute;
+            bottom: 110%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 1;
+        }
+
+        /* Animations */
+        #roomId {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.75rem;
+            width: 200px;
+            transition: all 0.2s;
+        }
+
+        #roomId:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+            background: rgba(15, 23, 42, 0.8);
         }
     </style>
 </head>
+
 <body>
-    <div class="header">
-        <h2>Meet</h2>
-        <div class="room-controls">
-            <input type="text" id="roomId" placeholder="Enter Room ID" value="general">
-            <button id="joinBtn">Join Room</button>
+    <div class="meet-header">
+        <div class="brand-container">
+            <div class="brand-icon">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <div class="brand-text">
+                <h1>Food<span>Tech</span></h1>
+                <p>Meetings</p>
+            </div>
         </div>
+
+        <div class="room-controls">
+            <input type="text" id="roomId" placeholder="Enter Room ID" class="form-input" value="general">
+            <button id="joinBtn" class="btn btn-primary">
+                <i class="fas fa-plus-circle" style="margin-right: 0.5rem;"></i> Join Room
+            </button>
+        </div>
+
         <div id="roomStatus" class="room-status" style="display: none;">
             <span class="status-dot"></span>
-            Connected to: <strong id="currentRoomName"></strong>
+            <span>Connected to: <strong id="currentRoomName"></strong></span>
         </div>
     </div>
 
@@ -187,17 +360,21 @@
 
     <div class="controls-bar" id="controlsBar" style="display: none;">
         <button class="control-btn" id="micBtn" title="Toggle Microphone">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+            <i class="fas fa-microphone"></i>
         </button>
         <button class="control-btn" id="cameraBtn" title="Toggle Camera">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+            <i class="fas fa-video"></i>
         </button>
+
+        <div style="width: 1px; height: 30px; background: rgba(255,255,255,0.1); margin: 0 0.5rem;"></div>
+
         <button class="control-btn leave-btn" id="leaveBtn" title="Leave Call">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            <i class="fas fa-phone-slash"></i>
         </button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="/js/meet.js"></script>
 </body>
+
 </html>

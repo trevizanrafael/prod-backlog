@@ -736,7 +736,7 @@ async function startServer() {
         server.listen(PORT, () => {
             console.log(`\n🚀 Server running on http://localhost:${PORT}`);
             console.log(`📊 Dashboard: http://localhost:${PORT}`);
-            console.log(`🔗 API: http://localhost:${PORT}/api`);
+            console.log(`Meet: http://localhost:${PORT}/meet.html`);
         });
     } catch (error) {
         console.error('❌ Failed to start server:', error);
