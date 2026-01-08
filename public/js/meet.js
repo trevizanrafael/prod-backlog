@@ -4,6 +4,11 @@ const joinBtn = document.getElementById('joinBtn');
 const roomIdInput = document.getElementById('roomId');
 
 let localStream;
+let screenStream;
+let isSharing = false;
+let screenSocket; // Secondary socket for screen share
+
+// Store peer connections for the main socket
 const peers = {}; // userId -> RTCPeerConnection
 
 // Configuration for ICE servers (STUN)
@@ -17,7 +22,7 @@ const rtcConfig = {
 async function start() {
     try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        addVideoStream(localStream, 'You', true);
+        addVideoStream(localStream, 'You', true); // Use 'You' as ID for local to make it predictable
 
         // Setup socket listeners after we have the stream
         setupSocketListeners();
@@ -47,27 +52,33 @@ function setupSocketListeners() {
     // Media Controls
     document.getElementById('micBtn').addEventListener('click', (e) => {
         const enabled = localStream.getAudioTracks()[0].enabled;
+        const btn = e.currentTarget;
+        const icon = btn.querySelector('i');
+
         if (enabled) {
             localStream.getAudioTracks()[0].enabled = false;
-            e.currentTarget.classList.add('active-off');
-            e.currentTarget.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>`;
+            btn.classList.add('active-off');
+            icon.className = 'fas fa-microphone-slash';
         } else {
             localStream.getAudioTracks()[0].enabled = true;
-            e.currentTarget.classList.remove('active-off');
-            e.currentTarget.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>`;
+            btn.classList.remove('active-off');
+            icon.className = 'fas fa-microphone';
         }
     });
 
     document.getElementById('cameraBtn').addEventListener('click', (e) => {
         const enabled = localStream.getVideoTracks()[0].enabled;
+        const btn = e.currentTarget;
+        const icon = btn.querySelector('i');
+
         if (enabled) {
             localStream.getVideoTracks()[0].enabled = false;
-            e.currentTarget.classList.add('active-off');
-            e.currentTarget.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M21 21l-9-9m9 9v-2.48l-2-2"></path><path d="M21 7l-7 5V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4"></path></svg>`;
+            btn.classList.add('active-off');
+            icon.className = 'fas fa-video-slash';
         } else {
             localStream.getVideoTracks()[0].enabled = true;
-            e.currentTarget.classList.remove('active-off');
-            e.currentTarget.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>`;
+            btn.classList.remove('active-off');
+            icon.className = 'fas fa-video';
         }
     });
 
@@ -75,10 +86,64 @@ function setupSocketListeners() {
         window.location.reload();
     });
 
+    // Share Screen Toggle
+    document.getElementById('shareBtn').addEventListener('click', () => {
+        if (!isSharing) {
+            startScreenShare();
+        } else {
+            stopScreenShare();
+        }
+    });
+
+    // Chat Logic
+    const chatPanel = document.getElementById('chatPanel');
+    const chatToggleBtn = document.getElementById('chatToggleBtn');
+    const closeChatBtn = document.getElementById('closeChatBtn');
+    const chatForm = document.getElementById('chatForm');
+    const chatInput = document.getElementById('chatInput');
+    const chatMessages = document.getElementById('chatMessages');
+
+    chatToggleBtn.addEventListener('click', () => {
+        chatPanel.style.right = '0';
+    });
+
+    closeChatBtn.addEventListener('click', () => {
+        chatPanel.style.right = '-320px';
+    });
+
+    chatForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const message = chatInput.value;
+        if (message.trim()) {
+            const roomId = roomIdInput.value || document.getElementById('currentRoomName').innerText;
+            socket.emit('send-chat-message', roomId, message);
+            appendMessage('You', message);
+            chatInput.value = '';
+        }
+    });
+
+    socket.on('receive-chat-message', (data) => {
+        appendMessage(`User ${data.senderId.substr(0, 4)}`, data.message);
+        if (chatPanel.style.right !== '0px') {
+            chatToggleBtn.style.color = '#3b82f6'; // Highlight button if closed
+            setTimeout(() => chatToggleBtn.style.color = '', 2000);
+        }
+    });
+
+    // ================== SIGNALING LOGIC (Main Socket) ==================
+
     // Another user connected -> Initiate call (Create Offer)
     socket.on('user-connected', (userId) => {
         console.log('User connected:', userId);
-        connectToNewUser(userId, localStream);
+
+        // Prevent loopback: Do not connect to my own screen share socket!
+        if (screenSocket && userId === screenSocket.id) {
+            console.log('Ignoring my own screen share socket');
+            return;
+        }
+
+        // Pass my metadata (User)
+        connectToNewUser(userId, localStream, socket, peers, { type: 'user' });
     });
 
     // User disconnected -> Close connection
@@ -92,38 +157,60 @@ function setupSocketListeners() {
 
     // Handle signals (Offer, Answer, ICE Candidate)
     socket.on('signal', async (data) => {
-        const { callerId, signal } = data;
-
-        if (!peers[callerId]) {
-            // Received invite (Offer) from someone completely new to us
-            // Or we are the one receiving the connection request
-            peers[callerId] = createPeerConnection(callerId, localStream);
-        }
-
-        const peer = peers[callerId];
-
-        try {
-            if (signal.type === 'offer') {
-                await peer.setRemoteDescription(new RTCSessionDescription(signal));
-                const answer = await peer.createAnswer();
-                await peer.setLocalDescription(answer);
-                socket.emit('signal', {
-                    target: callerId,
-                    callerId: socket.id,
-                    signal: peer.localDescription
-                });
-            } else if (signal.type === 'answer') {
-                await peer.setRemoteDescription(new RTCSessionDescription(signal));
-            } else if (signal.candidate) {
-                await peer.addIceCandidate(new RTCIceCandidate(signal));
-            }
-        } catch (e) {
-            console.error('Error handling signal:', e);
-        }
+        handleSignal(data, socket, peers, localStream, { type: 'user' });
     });
 }
 
-function createPeerConnection(targetUserId, stream) {
+// Reuseable Signaling Handler
+async function handleSignal(data, ioSocket, peerMap, stream, myMetadata) {
+    const { callerId, signal, metadata } = data;
+
+    // metadata is the REMOTE user's metadata
+
+    if (!peerMap[callerId]) {
+        // Received invite (Offer)
+        peerMap[callerId] = createPeerConnection(callerId, stream, ioSocket, metadata);
+    }
+
+    const peer = peerMap[callerId];
+
+    try {
+        if (signal.type === 'offer') {
+            await peer.setRemoteDescription(new RTCSessionDescription(signal));
+            const answer = await peer.createAnswer();
+            await peer.setLocalDescription(answer);
+            ioSocket.emit('signal', {
+                target: callerId,
+                callerId: ioSocket.id,
+                signal: peer.localDescription,
+                signal: peer.localDescription,
+                metadata: myMetadata
+            });
+        } else if (signal.type === 'answer') {
+            await peer.setRemoteDescription(new RTCSessionDescription(signal));
+
+            // If we receive an answer with metadata, we should update the UI
+            // because ontrack might have fired before we had metadata
+            if (metadata && metadata.type === 'screen') {
+                const videoCard = document.getElementById(`wrapper-${callerId}`);
+                if (videoCard) {
+                    if (!videoCard.classList.contains('screen-share')) {
+                        videoCard.classList.add('screen-share');
+                        const labelDiv = videoCard.querySelector('.user-label');
+                        const parentId = metadata.parentUser || callerId;
+                        labelDiv.innerHTML = `<i class="fas fa-desktop"></i> Sharing of User ${parentId.substr(0, 4)}`;
+                    }
+                }
+            }
+        } else if (signal.candidate) {
+            await peer.addIceCandidate(new RTCIceCandidate(signal));
+        }
+    } catch (e) {
+        console.error('Error handling signal:', e);
+    }
+}
+
+function createPeerConnection(targetUserId, stream, ioSocket, remoteMetadata) {
     const peer = new RTCPeerConnection(rtcConfig);
 
     // Add local tracks to connection
@@ -132,54 +219,170 @@ function createPeerConnection(targetUserId, stream) {
     // Handle incoming stream
     peer.ontrack = (event) => {
         if (event.streams && event.streams[0]) {
-            addVideoStream(event.streams[0], targetUserId, false);
+            addVideoStream(event.streams[0], targetUserId, false, remoteMetadata);
         }
     };
 
     // Handle ICE candidates
     peer.onicecandidate = (event) => {
         if (event.candidate) {
-            socket.emit('signal', {
+            ioSocket.emit('signal', {
                 target: targetUserId,
-                callerId: socket.id,
-                signal: event.candidate
+                callerId: ioSocket.id, // My socket ID
+                signal: event.candidate,
+                // Metadata isn't strictly needed for ICE, but consistent
+                // Actually ICE signal handler doesn't read metadata, just adds candidate.
             });
         }
     };
 
-    peers[targetUserId] = peer;
+    // peers[targetUserId] = peer; // Caller handles storage
     return peer;
 }
 
-async function connectToNewUser(userId, stream) {
-    const peer = createPeerConnection(userId, stream);
+async function connectToNewUser(userId, stream, ioSocket, peerMap, myMetadata) {
+    // We don't know remote metadata yet, will get it in Answer? 
+    // Actually, we initiated, so we don't have it. It's fine, ontrack usually comes after?
+    // Wait, ontrack fires when tracks arrive.
+    // If we initiate, we will receive Answer, then eventually media.
+
+    // We pass null for remoteMetadata. addVideoStream handles missing metadata defaults.
+    const peer = createPeerConnection(userId, stream, ioSocket, null);
+    peerMap[userId] = peer;
 
     // Create Offer
     const offer = await peer.createOffer();
     await peer.setLocalDescription(offer);
 
-    socket.emit('signal', {
+    ioSocket.emit('signal', {
         target: userId,
-        callerId: socket.id,
-        signal: peer.localDescription
+        callerId: ioSocket.id,
+        signal: peer.localDescription,
+        metadata: myMetadata
     });
 }
 
-function addVideoStream(stream, userId, isLocal) {
+// ================== SCREEN SHARE (Ghost User) ==================
+
+async function startScreenShare() {
+    try {
+        screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+
+        // 1. Create a NEW socket connection
+        screenSocket = io();
+        const screenPeers = {}; // Store peers for this socket
+
+        // 2. Metadata for this "user"
+        const screenMetadata = {
+            type: 'screen',
+            parentUser: socket.id
+        };
+
+        // 3. Connect and Join Room
+        screenSocket.on('connect', () => {
+            const roomId = roomIdInput.value || document.getElementById('currentRoomName').innerText;
+            console.log('Screen Socket connected:', screenSocket.id);
+            screenSocket.emit('join-room', roomId, screenSocket.id);
+        });
+
+        // 4. Handle signaling for the screen socket
+        screenSocket.on('user-connected', (userId) => {
+            console.log('User sees new user (from screen socket):', userId);
+            // Initiate call FROM screen TO user
+            connectToNewUser(userId, screenStream, screenSocket, screenPeers, screenMetadata);
+        });
+
+        screenSocket.on('signal', (data) => {
+            handleSignal(data, screenSocket, screenPeers, screenStream, screenMetadata);
+        });
+
+        // Handle stop sharing from browser UI
+        screenStream.getVideoTracks()[0].onended = () => stopScreenShare();
+
+        isSharing = true;
+        document.getElementById('shareBtn').classList.add('active-off');
+        document.getElementById('shareBtn').style.color = '#3b82f6';
+        document.getElementById('shareBtn').innerHTML = '<i class="fas fa-desktop"></i>'; // Ensure icon
+
+        // Local Preview (Optional, usually we see our own screen anyway, prevents mirror effect confusion)
+        // But users like to see what they are sharing.
+        // We can add it as a video card manually.
+        addVideoStream(screenStream, 'Me-Screen', true, { type: 'screen' });
+
+    } catch (error) {
+        console.error("Error sharing screen:", error);
+    }
+}
+
+function stopScreenShare() {
+    if (!isSharing) return;
+
+    // Stop tracks
+    if (screenStream) {
+        screenStream.getTracks().forEach(track => track.stop());
+    }
+
+    // Disconnect ghost socket
+    if (screenSocket) {
+        screenSocket.disconnect();
+        screenSocket = null;
+    }
+
+    // Remove local preview
+    removeVideoElement('Me-Screen');
+
+    isSharing = false;
+    document.getElementById('shareBtn').classList.remove('active-off');
+    document.getElementById('shareBtn').style.color = '';
+}
+
+
+// ================== UI HELPERS ==================
+
+function appendMessage(sender, message) {
+    const msgDiv = document.createElement('div');
+    msgDiv.style.marginBottom = '0.5rem';
+    msgDiv.style.color = 'white';
+    msgDiv.style.fontSize = '0.9rem';
+    msgDiv.innerHTML = `<strong style="color: #3b82f6;">${sender}:</strong> <span style="color: #e2e8f0;">${message}</span>`;
+    document.getElementById('chatMessages').appendChild(msgDiv);
+    document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+}
+
+function addVideoStream(stream, userId, isLocal, metadata) {
     // Check if video already exists
     const existing = document.getElementById(`video-${userId}`);
     if (existing) return;
 
-    const div = document.createElement('div');
-    div.className = 'video-card';
-    div.id = `wrapper-${userId}`;
+    let label = `User ${userId.substr(0, 4)}`;
+    let iconClass = 'fa-user-circle';
+    let wrapperClass = 'video-card';
 
-    // Use user ID (or "You" for local) as label
-    const label = isLocal ? "You" : `User ${userId.substr(0, 4)}`;
+    if (isLocal) {
+        if (userId === 'Me-Screen') {
+            label = "You (Sharing)";
+            iconClass = 'fa-desktop';
+            wrapperClass += ' screen-share';
+        } else {
+            label = "You";
+            iconClass = 'fa-user';
+        }
+    } else if (metadata && metadata.type === 'screen') {
+        const parentId = metadata.parentUser || userId; // Fallback
+        label = `Sharing of User ${parentId.substr(0, 4)}`;
+        iconClass = 'fa-desktop';
+        wrapperClass += ' screen-share'; // Adds no-mirror logic
+    }
+
+    const div = document.createElement('div');
+    div.className = wrapperClass;
+    div.id = `wrapper-${userId}`;
 
     div.innerHTML = `
         <video id="video-${userId}" playsinline ${isLocal ? 'muted' : ''} autoplay></video>
-        <div class="user-label">${label}</div>
+        <div class="user-label">
+            <i class="fas ${iconClass}"></i> ${label}
+        </div>
     `;
 
     videoGrid.appendChild(div);

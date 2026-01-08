@@ -719,7 +719,16 @@ io.on('connection', (socket) => {
     socket.on('signal', (data) => {
         io.to(data.target).emit('signal', {
             signal: data.signal,
-            callerId: data.callerId
+            callerId: data.callerId,
+            metadata: data.metadata // Pass through metadata (name, type)
+        });
+    });
+
+    // Handle Chat Messages
+    socket.on('send-chat-message', (roomId, message) => {
+        socket.broadcast.to(roomId).emit('receive-chat-message', {
+            message: message,
+            senderId: socket.id
         });
     });
 });
