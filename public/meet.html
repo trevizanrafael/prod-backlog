@@ -135,6 +135,34 @@
             /* Better for reading text */
         }
 
+        /* Pinned Video Logic */
+        .video-card.pinned {
+            /* Full size within the grid, respecting header */
+            width: 100%;
+            height: 100%;
+            max-width: none;
+            max-height: 75vh;
+            /* Leave space for controls/header */
+            margin: 0;
+            z-index: 20;
+            border-color: #3b82f6;
+            /* Highlight border */
+        }
+
+        .video-card.hidden-by-pin {
+            display: none !important;
+        }
+
+        .video-card.pinned video {
+            object-fit: contain;
+            /* Ensure whole video is seen */
+        }
+
+        .video-card {
+            cursor: pointer;
+            /* Indiciate clickable */
+        }
+
         .user-label {
             position: absolute;
             bottom: 1rem;
@@ -407,7 +435,7 @@
 
         <div style="padding: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
             <form id="chatForm" style="display: flex; gap: 0.5rem;">
-                <input type="text" id="chatInput" placeholder="Type a message..."
+                <input type="text" id="chatInput" autocomplete="off" placeholder="Type a message..."
                     style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 0.75rem; border-radius: 0.5rem; color: white; outline: none;">
                 <button type="submit"
                     style="background: #3b82f6; border: none; color: white; width: 40px; border-radius: 0.5rem; cursor: pointer;">

@@ -385,6 +385,26 @@ function addVideoStream(stream, userId, isLocal, metadata) {
         </div>
     `;
 
+    // Click to Pin/Unpin
+    div.addEventListener('click', () => {
+        const wasPinned = div.classList.contains('pinned');
+
+        // Reset process: Unpin all, Unhide all
+        document.querySelectorAll('.video-card').forEach(c => {
+            c.classList.remove('pinned');
+            c.classList.remove('hidden-by-pin');
+        });
+
+        if (!wasPinned) {
+            // Pin this one
+            div.classList.add('pinned');
+            // Hide others
+            document.querySelectorAll('.video-card').forEach(c => {
+                if (c !== div) c.classList.add('hidden-by-pin');
+            });
+        }
+    });
+
     videoGrid.appendChild(div);
     const video = document.getElementById(`video-${userId}`);
     video.srcObject = stream;
@@ -392,7 +412,15 @@ function addVideoStream(stream, userId, isLocal, metadata) {
 
 function removeVideoElement(userId) {
     const wrapper = document.getElementById(`wrapper-${userId}`);
-    if (wrapper) wrapper.remove();
+    if (wrapper) {
+        // Fix: If the pinned user leaves, we must unhide everyone else
+        if (wrapper.classList.contains('pinned')) {
+            document.querySelectorAll('.video-card').forEach(c => {
+                c.classList.remove('hidden-by-pin');
+            });
+        }
+        wrapper.remove();
+    }
 }
 
 // Initialize
