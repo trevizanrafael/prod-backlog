@@ -2,6 +2,7 @@ const socket = io();
 const videoGrid = document.getElementById('videoGrid');
 const joinBtn = document.getElementById('joinBtn');
 const roomIdInput = document.getElementById('roomId');
+const localUser = JSON.parse(localStorage.getItem('user')) || { name: 'Guest' + Math.floor(Math.random() * 1000) };
 
 let localStream;
 let screenStream;
@@ -37,9 +38,77 @@ function setupSocketListeners() {
     joinBtn.addEventListener('click', () => {
         const roomId = roomIdInput.value;
         if (!roomId) return;
+        checkAndJoin(roomId);
+    });
 
+    // Password Modal Logic
+    const passwordModal = document.getElementById('passwordModal');
+    const passwordForm = document.getElementById('passwordForm');
+    const passwordInput = document.getElementById('joinPassword');
+    const passwordError = document.getElementById('passwordError');
+    let pendingRoomId = null;
+
+    passwordForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        console.log('Password form submitted');
+        const password = passwordInput.value;
+        console.log('Pending Room ID:', pendingRoomId);
+
+        if (!password) {
+            console.log('No password entered');
+            return;
+        }
+        if (!pendingRoomId) {
+            console.error('No pending room ID!');
+            return;
+        }
+
+        try {
+            console.log('Verifying password...');
+            const res = await axios.post(`/api/meetings/verify/${pendingRoomId}`, { password });
+            console.log('Verification result:', res.data);
+
+            if (res.data.success) {
+                passwordModal.classList.add('hidden');
+                passwordModal.style.display = 'none'; // Force hide just in case
+                finalizeJoin(pendingRoomId);
+            } else {
+                passwordError.classList.remove('hidden');
+                passwordError.textContent = 'Senha incorreta. Tente novamente.';
+            }
+        } catch (err) {
+            console.error('Verification error:', err);
+            passwordError.textContent = 'Erro ao verificar senha.';
+            passwordError.classList.remove('hidden');
+        }
+    });
+
+    async function checkAndJoin(roomId) {
+        try {
+            // Check if protected
+            const res = await axios.get(`/api/meetings/check/${roomId}`);
+            const { protected: isProtected, title } = res.data;
+
+            if (isProtected) {
+                pendingRoomId = roomId;
+                passwordModal.classList.remove('hidden');
+                passwordModal.style.display = 'flex'; // Override inline style if needed, or matches default
+                passwordInput.value = '';
+                passwordError.classList.add('hidden');
+                passwordInput.focus();
+            } else {
+                finalizeJoin(roomId);
+            }
+        } catch (error) {
+            console.error('Check failed, assuming public or error', error);
+            finalizeJoin(roomId); // Fallback to try joining anyway
+        }
+    }
+
+    function finalizeJoin(roomId) {
         console.log('Joining room:', roomId);
-        socket.emit('join-room', roomId, socket.id);
+        // Pass username
+        socket.emit('join-room', roomId, socket.id, localUser.name);
 
         // Disable inputs and show controls
         joinBtn.style.display = 'none';
@@ -47,7 +116,7 @@ function setupSocketListeners() {
         document.getElementById('roomStatus').style.display = 'flex';
         document.getElementById('currentRoomName').textContent = roomId;
         document.getElementById('controlsBar').style.display = 'flex';
-    });
+    }
 
     // Media Controls
     document.getElementById('micBtn').addEventListener('click', (e) => {
@@ -116,14 +185,15 @@ function setupSocketListeners() {
         const message = chatInput.value;
         if (message.trim()) {
             const roomId = roomIdInput.value || document.getElementById('currentRoomName').innerText;
-            socket.emit('send-chat-message', roomId, message);
+            socket.emit('send-chat-message', roomId, message, localUser.name);
             appendMessage('You', message);
             chatInput.value = '';
         }
     });
 
     socket.on('receive-chat-message', (data) => {
-        appendMessage(`User ${data.senderId.substr(0, 4)}`, data.message);
+        const senderName = data.userName || `User ${data.senderId.substr(0, 4)}`;
+        appendMessage(senderName, data.message);
         if (chatPanel.style.right !== '0px') {
             chatToggleBtn.style.color = '#3b82f6'; // Highlight button if closed
             setTimeout(() => chatToggleBtn.style.color = '', 2000);
@@ -133,8 +203,8 @@ function setupSocketListeners() {
     // ================== SIGNALING LOGIC (Main Socket) ==================
 
     // Another user connected -> Initiate call (Create Offer)
-    socket.on('user-connected', (userId) => {
-        console.log('User connected:', userId);
+    socket.on('user-connected', (userId, userName) => {
+        console.log('User connected:', userId, userName);
 
         // Prevent loopback: Do not connect to my own screen share socket!
         if (screenSocket && userId === screenSocket.id) {
@@ -143,7 +213,7 @@ function setupSocketListeners() {
         }
 
         // Pass my metadata (User)
-        connectToNewUser(userId, localStream, socket, peers, { type: 'user' });
+        connectToNewUser(userId, localStream, socket, peers, { type: 'user', name: localUser.name }, userName);
     });
 
     // User disconnected -> Close connection
@@ -165,7 +235,7 @@ function setupSocketListeners() {
 async function handleSignal(data, ioSocket, peerMap, stream, myMetadata) {
     const { callerId, signal, metadata } = data;
 
-    // metadata is the REMOTE user's metadata
+    // metadata is the REMOTE user's metadata (contains name!)
 
     if (!peerMap[callerId]) {
         // Received invite (Offer)
@@ -240,14 +310,9 @@ function createPeerConnection(targetUserId, stream, ioSocket, remoteMetadata) {
     return peer;
 }
 
-async function connectToNewUser(userId, stream, ioSocket, peerMap, myMetadata) {
-    // We don't know remote metadata yet, will get it in Answer? 
-    // Actually, we initiated, so we don't have it. It's fine, ontrack usually comes after?
-    // Wait, ontrack fires when tracks arrive.
-    // If we initiate, we will receive Answer, then eventually media.
-
-    // We pass null for remoteMetadata. addVideoStream handles missing metadata defaults.
-    const peer = createPeerConnection(userId, stream, ioSocket, null);
+async function connectToNewUser(userId, stream, ioSocket, peerMap, myMetadata, remoteUserName) {
+    // We pass remoteUserName as initial metadata if available
+    const peer = createPeerConnection(userId, stream, ioSocket, { name: remoteUserName });
     peerMap[userId] = peer;
 
     // Create Offer
@@ -275,7 +340,8 @@ async function startScreenShare() {
         // 2. Metadata for this "user"
         const screenMetadata = {
             type: 'screen',
-            parentUser: socket.id
+            parentUser: socket.id,
+            name: localUser.name
         };
 
         // 3. Connect and Join Room
@@ -354,7 +420,7 @@ function addVideoStream(stream, userId, isLocal, metadata) {
     const existing = document.getElementById(`video-${userId}`);
     if (existing) return;
 
-    let label = `User ${userId.substr(0, 4)}`;
+    let label = metadata && metadata.name ? metadata.name : `User ${userId.substr(0, 4)}`;
     let iconClass = 'fa-user-circle';
     let wrapperClass = 'video-card';
 
@@ -370,6 +436,8 @@ function addVideoStream(stream, userId, isLocal, metadata) {
     } else if (metadata && metadata.type === 'screen') {
         const parentId = metadata.parentUser || userId; // Fallback
         label = `Sharing of User ${parentId.substr(0, 4)}`;
+        if (metadata.name) label = `Sharing of ${metadata.name}`;
+
         iconClass = 'fa-desktop';
         wrapperClass += ' screen-share'; // Adds no-mirror logic
     }
@@ -459,3 +527,12 @@ function updateLayout() {
 
 // Initialize
 start();
+
+// Check URL params for room ID
+const urlParams = new URLSearchParams(window.location.search);
+const roomParam = urlParams.get('room');
+if (roomParam) {
+    roomIdInput.value = roomParam;
+    // Auto-check on load
+    checkAndJoin(roomParam);
+}
