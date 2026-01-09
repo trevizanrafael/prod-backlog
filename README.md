@@ -1,91 +1,110 @@
-# FoodTech Backlog Management System
+# FoodTech Backlog & Productivity Ecosystem
 
-Sistema completo para gerenciamento de backlog de produtos, focado em priorização, controle de escopo e acompanhamento de tarefas para times de FoodTech.
+Sistema integrado para alta produtividade de times FoodTech, combinando gerenciamento de backlog, quadro Kanban, armazenamento de arquivos, videochamadas e documentação em uma única plataforma com design premium **Glassmorphism**.
 
-## 🚀 Funcionalidades
+## 🚀 Módulos & Funcionalidades
 
-- **Dashboard Analítico**: Visualização de estatísticas, métricas de gargalos, tendências mensais e tempo por escopo.
-- **Gestão de Tarefas**:
-  - Criação de tarefas com detalhamento de problema e solução.
-  - Classificação por prioridade (High, Medium, Low) e complexidade.
-  - Upload de screenshots/evidências para problemas e resoluções.
-  - Timer para controle de tempo gasto (Time Tracking).
-- **Gestão de Escopos**: Categorização de tarefas por áreas do projeto.
-- **Controle de Acesso (RBAC)**:
-  - Sistema de login com JWT.
-  - Papéis de usuário: Admin, SuperUser, Visualizador.
-  - Permissões granulares para edição e visualização.
-- **Upload de Arquivos**: Armazenamento local de imagens e evidências.
+### 1. 📊 Dashboard & Backlog (Core)
+*   **Estatísticas em Tempo Real**: Métricas de gargalos, visão mensal e distribuição por escopo usando Chart.js.
+*   **Gestão de Tarefas Completa**:
+    *   Priorização (High, Medium, Low) e Complexidade.
+    *   Upload de evidências/screenshots.
+    *   **Time Tracking**: Cronômetro integrado para cada task.
+*   **Kanban Board**: Drag-and-drop intuitivo com colunas personalizadas (Pendente, Em Progresso, Code Review, Concluído).
 
-## 🛠️ Tecnologias Utilizadas
+### 2. ☁️ Personal Drive (FoodTech Documents)
+*   **Gestão de Arquivos**: Interface estilo Explorador de Arquivos para upload e organização de documentos.
+*   **Funcionalidades Avançadas**:
+    *   Navegação por pastas (Breadcrumbs).
+    *   Visualização de thumbnails para imagens.
+    *   **Menu de Contexto Personalizado** (Botão direito).
+    *   Modais estilizados para criação, renomeação e exclusão.
+    *   **Animações fluidas** de navegação.
+
+### 3. 📹 FoodTech Meet
+*   **Videochamadas Integradas**: Salas de reunião virtuais diretamente no navegador.
+*   **Tecnologia WebRTC + Socket.io**: Comunicação em tempo real de baixa latência.
+*   **Chat em Tempo Real**: Mensagens instantâneas durante as chamadas.
+*   **Controles de Mídia**: Mute/Unmute audio e vídeo, compartilhamento de tela (preparado).
+
+### 4. 📝 Editor Markdown
+*   **Anotações Rápidas**: Bloco de notas com suporte a Markdown (Github Flavor).
+*   **Preview em Tempo Real**: Visualize a formatação enquanto digita.
+
+### 5. 🔐 Segurança & Controle (RBAC)
+*   **Autenticação JWT**: Sessões seguras e persistentes.
+*   **Níveis de Acesso**:
+    *   **Admin/SuperUser**: Controle total (Gerenciar Usuários, Roles).
+    *   **Membro**: Acesso a tarefas e drive pessoal.
+    *   **Isolamento de Dados**: Usuários veem apenas seus próprios arquivos no Drive.
+
+---
+
+## 🛠️ Stack Tecnológico
 
 **Backend**
-- Node.js & Express
-- PostgreSQL (Banco de Dados)
-- JWT & BCrypt (Autenticação e Segurança)
-- Multer (Gerenciamento de Uploads)
+*   **Node.js & Express**: API RESTful robusta.
+*   **PostgreSQL**: Banco de dados relacional para dados estruturados.
+*   **Socket.io**: Comunicação WebSocket para o Meet e notificações.
+*   **Multer**: Upload e armazenamento seguro de arquivos no servidor.
+*   **BCrypt & JWT**: Criptografia e autenticação stateless.
 
 **Frontend**
-- HTML5, CSS3, JavaScript (Vanilla)
-- Design Responsivo
-- Chart.js (Visualização de dados no Dashboard)
+*   **Tailwind CSS**: Framework de utilitários para o design system.
+*   **Glassmorphism UI**: Estilo visual translúcido, moderno e responsivo.
+*   **Axios**: Cliente HTTP para comunicação com API.
+*   **FontAwesome**: Íconografia vetorial.
 
-## ⚙️ Pré-requisitos
+---
 
-- Node.js (v14 ou superior)
-- PostgreSQL instalado e rodando
+## ⚙️ Configuração e Instalação
 
-## 📦 Instalação
+### Pré-requisitos
+*   Node.js (v18+)
+*   PostgreSQL
 
-1. Clone o repositório:
-```bash
-git clone https://github.com/seu-usuario/prod-backlog.git
-cd prod-backlog
-```
+### Passo a Passo
 
-2. Instale as dependências:
-```bash
-npm install
-```
+1. **Clone o repositório**
+   ```bash
+   git clone https://github.com/seu-usuario/prod-backlog.git
+   cd prod-backlog
+   ```
 
-3. Configure as variáveis de ambiente:
-Crie um arquivo [.env](cci:7://file:///c:/Users/rafae/Documents/GitHub/prod-backlog/.env:0:0-0:0) na raiz do projeto seguindo o modelo:
+2. **Instale as dependências**
+   ```bash
+   npm install
+   ```
 
-```env
-PORT=3000
-DB_USER=postgres
-DB_PASSWORD=sua_senha
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=foodtech_backlog
-JWT_SECRET=seu_segredo_jwt
-```
+3. **Configure o Ambiente (.env)**
+   Crie um arquivo `.env` na raiz com base no `.env.example`:
+   ```env
+   PORT=3000
+   DATABASE_URL=postgres://user:pass@localhost:5432/foodtech_db
+   JWT_SECRET=sua_chave_aqui_0183813
+   # Variáveis legadas (opcional se usar DATABASE_URL)
+   DB_HOST=localhost
+   DB_PORT=5432
+   # ...
+   ```
 
-4. O sistema irá rodar as migrações do banco de dados automaticamente na primeira execução.
+4. **Inicie o Servidor**
+   O sistema cria as tabelas automaticamente na primeira execução.
+   ```bash
+   npm start
+   ```
 
-## ▶️ Como Rodar
+5. **Acesse**
+   Abra `http://localhost:3000` no seu navegador.
 
-Para ambiente de desenvolvimento (com auto-reload):
-```bash
-npm run dev
-```
+---
 
-Para produção:
-```bash
-npm start
-```
+## 📂 Estrutura de Pastas
 
-O servidor iniciará em `http://localhost:3000`.
-
-## 📂 Estrutura do Projeto
-
-- `/public`: Arquivos estáticos do frontend (HTML, CSS, JS modules).
-- `/db`: Scripts de migração e conexão com o banco.
-- `/uploads`: Diretório para armazenamento das imagens das tarefas.
-- `server.js`: Ponto de entrada da aplicação e definição de rotas.
-- `auth.js`: Middlewares de autenticação e lógica de segurança.
-
-## 📝 Scripts Disponíveis
-
-- `npm start`: Inicia o servidor de produção.
-- `npm run dev`: Inicia o servidor com nodemon para desenvolvimento.
+*   **`public/`**: Frontend estático (HTML, CSS, JS).
+    *   `drive.html`: Módulo Drive.
+    *   `meet.html`: Módulo Meet.
+    *   `js/`: Lógica client-side modularizada.
+*   **`server.js`**: Core da aplicação, rotas API e configuração Socket.io.
+*   **`db/`**: Scripts de banco de dados e migrações.
+*   **`drive_storage/`**: Armazenamento privado de arquivos do Drive.

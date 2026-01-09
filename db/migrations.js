@@ -110,6 +110,44 @@ async function runMigrations() {
     `);
     console.log('✅ Table "users" ready');
 
+    // ==================== DRIVE MODULE TABLES ====================
+
+    // Create folders table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS folders (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        parent_id INTEGER REFERENCES folders(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Table "folders" ready');
+
+    // Create files table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS files (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        original_name VARCHAR(255) NOT NULL,
+        path VARCHAR(500) NOT NULL,
+        size BIGINT NOT NULL,
+        type VARCHAR(100),
+        folder_id INTEGER REFERENCES folders(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Table "files" ready');
+
+    // Drive Indexes
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_folders_parent ON folders(parent_id);`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_folders_user ON folders(user_id);`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_files_folder ON files(folder_id);`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_files_user ON files(user_id);`);
+    
+    // =============================================================
+
     // Seed default roles if they don't exist
     const adminRole = await db.query(`
       INSERT INTO roles (name, permissions)

@@ -156,8 +156,12 @@ function initializeNavigation() {
 
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
-            e.preventDefault();
             const module = link.getAttribute('data-module');
+
+            // If no data-module (e.g., standard href), let default behavior happen
+            if (!module) return;
+
+            e.preventDefault();
 
             // Update active state
             navLinks.forEach(l => l.classList.remove('active'));
