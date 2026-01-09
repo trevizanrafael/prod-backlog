@@ -233,41 +233,61 @@ function renderMeetingsList(meetings) {
         const isHost = meeting.role === 'host';
 
         return `
-            <div class="group relative bg-[#1e293b]/60 backdrop-blur-sm border border-white/5 rounded-2xl p-5 hover:border-pink-500/30 hover:bg-[#1e293b]/80 transition-all duration-300">
-                <div class="absolute top-4 right-4">
-                    ${isHost
-                ? '<span class="px-2 py-1 bg-purple-500/20 text-purple-400 text-xs rounded-lg border border-purple-500/20">Host</span>'
-                : '<span class="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-lg border border-blue-500/20">Convidado</span>'
-            }
+            <div class="group bg-[#1e293b]/60 backdrop-blur-sm border border-white/5 rounded-2xl p-5 hover:border-pink-500/30 hover:bg-[#1e293b]/80 transition-all duration-300 flex flex-col">
+                <div class="flex justify-between items-start mb-3 gap-2">
+                    <p class="text-sm text-pink-400 font-medium flex items-center gap-2">
+                        <i class="far fa-clock"></i> ${dateStr} às ${timeStr}
+                    </p>
+                    <span class="shrink-0 px-2 py-1 ${isHost ? 'bg-purple-500/20 text-purple-400 border-purple-500/20' : 'bg-blue-500/20 text-blue-400 border-blue-500/20'} text-xs rounded-lg border">
+                        ${isHost ? 'Host' : 'Convidado'}
+                    </span>
                 </div>
 
                 <div class="mb-4">
-                    <p class="text-sm text-pink-400 font-medium mb-1 flex items-center gap-2">
-                        <i class="far fa-clock"></i> ${dateStr} às ${timeStr}
-                    </p>
-                    <h3 class="text-xl font-bold text-white group-hover:text-pink-300 transition-colors">${meeting.title}</h3>
-                    <p class="text-sm text-gray-400 mt-1">por @${meeting.creator_name}</p>
+                    <h3 class="text-xl font-bold text-white group-hover:text-pink-300 transition-colors mb-1">${meeting.title}</h3>
+                    <p class="text-sm text-gray-400">por @${meeting.creator_name}</p>
                 </div>
 
                 <div class="flex items-center gap-3 pt-4 border-t border-white/5 mt-auto">
                     <a href="/meet.html?room=${meeting.room_id}" class="flex-1 text-center bg-white/5 hover:bg-white/10 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors border border-white/10">
                         Entrar na Sala
                     </a>
-                    <button onclick="copyLink('${meeting.room_id}')" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition-colors border border-white/10" title="Copiar ID da Sala">
-                        <i class="far fa-copy"></i>
-                    </button>
+                    <div class="relative">
+                        <button onclick="copyLink('${meeting.room_id}', this)" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition-colors border border-white/10 group-copy" title="Copiar ID da Sala">
+                            <i class="far fa-copy transition-transform duration-200"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
     }).join('');
 }
 
-function copyLink(id) {
-    const url = `${window.location.origin}/meet.html?room=${id}`; // Or just ID
-    // User probably just wants the generic link or just entering the ID.
-    // Let's copy the full URL for convenience.
+function copyLink(id, btn) {
+    const url = `${window.location.origin}/meet.html?room=${id}`;
+
     navigator.clipboard.writeText(url).then(() => {
-        // Simple visual feedback
-        alert('Link copiado!'); // Or toast if we had one ready
+        // Animation
+        const icon = btn.querySelector('i');
+        const originalClass = icon.className;
+
+        // Change icon temporarily
+        icon.className = 'fas fa-check text-green-400 scale-110';
+        btn.classList.add('border-green-500/50', 'bg-green-500/10');
+
+        // Show floating "Copiado!" tooltip
+        const tooltip = document.createElement('div');
+        tooltip.textContent = 'Copiado!';
+        tooltip.className = 'absolute bottom-full mb-2 left-1/2 -translate-x-1/2 text-[10px] font-bold text-green-400 bg-dark-900/90 px-2 py-1 rounded shadow-lg border border-green-500/20 animate-fade-in-up whitespace-nowrap pointer-events-none z-10';
+        btn.parentElement.appendChild(tooltip);
+
+        setTimeout(() => {
+            // Revert icon
+            icon.className = originalClass; // 'far fa-copy ...'
+            btn.classList.remove('border-green-500/50', 'bg-green-500/10');
+
+            // Remove tooltip
+            tooltip.remove();
+        }, 2000);
     });
 }
