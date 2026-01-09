@@ -946,10 +946,10 @@ io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
     // Join a specific room
-    socket.on('join-room', (roomId, userId) => {
-        console.log(`User ${userId} joining room ${roomId}`);
+    socket.on('join-room', (roomId, userId, userName) => {
+        console.log(`User ${userId} (${userName || 'Anonymous'}) joining room ${roomId}`);
         socket.join(roomId);
-        socket.broadcast.to(roomId).emit('user-connected', userId);
+        socket.broadcast.to(roomId).emit('user-connected', userId, userName);
 
         socket.on('disconnect', () => {
             console.log(`User ${userId} disconnected`);
@@ -968,10 +968,11 @@ io.on('connection', (socket) => {
     });
 
     // Handle Chat Messages
-    socket.on('send-chat-message', (roomId, message) => {
+    socket.on('send-chat-message', (roomId, message, userName) => {
         socket.broadcast.to(roomId).emit('receive-chat-message', {
             message: message,
-            senderId: socket.id
+            senderId: socket.id,
+            userName: userName
         });
     });
 });
@@ -995,6 +996,153 @@ async function startServer() {
         process.exit(1);
     }
 }
+
+// ==================== MEETINGS ROUTES ====================
+
+// Search users for invite
+app.get('/api/users/search', authenticateToken, async (req, res) => {
+    try {
+        const { q } = req.query;
+        if (!q) return res.json([]);
+
+        // Case-insensitive search, exclude current user
+        const result = await db.query(
+            "SELECT id, username, name FROM users WHERE (username ILIKE $1 OR name ILIKE $1) AND id != $2 LIMIT 10",
+            [`%${q}%`, req.user.id]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error searching users:', error);
+        res.status(500).json({ error: 'Search failed' });
+    }
+});
+
+// Create meeting
+app.post('/api/meetings', authenticateToken, async (req, res) => {
+    try {
+        const { title, scheduled_at, password, invite_ids } = req.body;
+
+        if (!title || !scheduled_at) {
+            return res.status(400).json({ error: 'Title and date required' });
+        }
+
+        let password_hash = null;
+        if (password && password.trim()) {
+            password_hash = await bcrypt.hash(password, 10);
+        }
+
+        // Generate unique room ID
+        const room_id = 'meet-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+
+        // 1. Insert Meeting
+        const result = await db.query(
+            `INSERT INTO meetings (title, scheduled_at, password_hash, room_id, creator_id)
+             VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+            [title, scheduled_at, password_hash, room_id, req.user.id]
+        );
+        const meeting = result.rows[0];
+
+        // 2. Insert Invites
+        if (invite_ids && Array.isArray(invite_ids) && invite_ids.length > 0) {
+            // Bulk insert or loop? Loop is easier to write safely
+            for (const userId of invite_ids) {
+                await db.query(
+                    `INSERT INTO meeting_invites (meeting_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+                    [meeting.id, userId]
+                );
+            }
+        }
+
+        res.status(201).json(meeting);
+    } catch (error) {
+        console.error('Error creating meeting:', error);
+        res.status(500).json({ error: 'Failed to create meeting' });
+    }
+});
+
+// Get My Meetings (Created by me OR Invited to)
+app.get('/api/meetings', authenticateToken, async (req, res) => {
+    try {
+        // We want upcoming meetings mostly, or all? Let's return all upcoming + recent past?
+        // Let's return ALL for now, ordered by date desc
+
+        const result = await db.query(`
+            SELECT 
+                m.id, m.title, m.scheduled_at, m.room_id, m.creator_id,
+                u.name as creator_name,
+                CASE 
+                    WHEN m.creator_id = $1 THEN 'host'
+                    ELSE 'guest'
+                END as role
+            FROM meetings m
+            JOIN users u ON m.creator_id = u.id
+            LEFT JOIN meeting_invites mi ON m.id = mi.meeting_id
+            WHERE m.creator_id = $1 OR mi.user_id = $1
+            GROUP BY m.id, u.name
+            ORDER BY m.scheduled_at ASC
+        `, [req.user.id]);
+
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching meetings:', error);
+        res.status(500).json({ error: 'Failed to fetch meetings' });
+    }
+});
+
+// Check if meeting has password
+app.get('/api/meetings/check/:roomId', async (req, res) => {
+    try {
+        const { roomId } = req.params;
+        const result = await db.query('SELECT title, password_hash FROM meetings WHERE room_id = $1', [roomId]);
+
+        if (result.rows.length === 0) {
+            // Meeting not found in DB? 
+            // If we allow ad-hoc rooms without DB record, we assume no password.
+            // But strict mode: assume public if not found? Or not allow?
+            // "meet.js" used to just join any string. 
+            // Let's assume: Not found = No Password (Ad-hoc)
+            return res.json({ protected: false, title: 'Reunião' });
+        }
+
+        const meeting = result.rows[0];
+        res.json({
+            protected: !!meeting.password_hash,
+            title: meeting.title
+        });
+    } catch (error) {
+        console.error('Error checking meeting:', error);
+        res.status(500).json({ error: 'Check failed' });
+    }
+});
+
+// Verify meeting password
+app.post('/api/meetings/verify/:roomId', async (req, res) => {
+    try {
+        const { roomId } = req.params;
+        const { password } = req.body;
+
+        const result = await db.query('SELECT password_hash FROM meetings WHERE room_id = $1', [roomId]);
+
+        if (result.rows.length === 0) {
+            return res.json({ success: true }); // No record = No password
+        }
+
+        const meeting = result.rows[0];
+        if (!meeting.password_hash) {
+            return res.json({ success: true }); // Record exists but no password
+        }
+
+        if (!password) {
+            return res.json({ success: false });
+        }
+
+        const valid = await bcrypt.compare(password, meeting.password_hash);
+        res.json({ success: valid });
+    } catch (error) {
+        console.error('Error verifying password:', error);
+        res.status(500).json({ error: 'Verification failed' });
+    }
+});
 
 // ================== AUTHENTICATION ROUTES ==================
 

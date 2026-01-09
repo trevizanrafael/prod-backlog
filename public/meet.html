@@ -10,6 +10,32 @@
         rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            900: '#0f172a',
+                            800: '#1e293b',
+                            700: '#334155',
+                            600: '#475569',
+                            300: '#cbd5e1',
+                        },
+                        primary: {
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
 
     <style>
         body {
@@ -483,6 +509,31 @@
         </div>
     </div>
 
+    <div id="passwordModal" class="hidden"
+        style="position: fixed; inset: 0; z-index: 9999; display: none; align-items: center; justify-content: center; background-color: rgba(0,0,0,0.8); backdrop-filter: blur(4px);">
+        <div class="bg-[#1e293b] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl relative"
+            style="transform: scale(1); opacity: 1;">
+            <h3 class="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                <i class="fas fa-lock text-pink-500"></i> Reunião Protegida
+            </h3>
+            <p class="text-gray-400 mb-6 text-sm">Este link requer uma senha para acessar.</p>
+
+            <form id="passwordForm" class="space-y-4">
+                <div>
+                    <input type="password" id="joinPassword"
+                        class="w-full bg-[#0f172a] border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-pink-500 transition-colors"
+                        placeholder="Digite a senha..." autofocus>
+                    <p id="passwordError" class="text-red-400 text-xs mt-2 hidden">Senha incorreta. Tente novamente.</p>
+                </div>
+                <button type="submit"
+                    class="w-full bg-pink-600 hover:bg-pink-700 text-white font-semibold py-3 rounded-lg transition-colors shadow-lg shadow-pink-600/20">
+                    Entrar na Sala
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/js/meet.js"></script>
 </body>

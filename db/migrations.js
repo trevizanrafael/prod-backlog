@@ -145,7 +145,40 @@ async function runMigrations() {
     await db.query(`CREATE INDEX IF NOT EXISTS idx_folders_user ON folders(user_id);`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_files_folder ON files(folder_id);`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_files_user ON files(user_id);`);
-    
+
+    // ==================== MEETINGS MODULE TABLES ====================
+
+    // Create meetings table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS meetings (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        scheduled_at TIMESTAMP NOT NULL,
+        password_hash VARCHAR(255),
+        room_id VARCHAR(255) NOT NULL UNIQUE,
+        creator_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Table "meetings" ready');
+
+    // Create meeting_invites table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS meeting_invites (
+        id SERIAL PRIMARY KEY,
+        meeting_id INTEGER REFERENCES meetings(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        status VARCHAR(50) DEFAULT 'pending', -- pending, accepted, declined
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(meeting_id, user_id)
+      )
+    `);
+    console.log('✅ Table "meeting_invites" ready');
+
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_meetings_creator ON meetings(creator_id);`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_meetings_scheduled ON meetings(scheduled_at);`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_invites_user ON meeting_invites(user_id);`);
+
     // =============================================================
 
     // Seed default roles if they don't exist

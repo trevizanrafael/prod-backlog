@@ -21,13 +21,23 @@ Sistema integrado para alta produtividade de times FoodTech, combinando gerencia
     *   Modais estilizados para criação, renomeação e exclusão.
     *   **Animações fluidas** de navegação.
 
-### 3. 📹 FoodTech Meet
-*   **Videochamadas Integradas**: Salas de reunião virtuais diretamente no navegador.
-*   **Tecnologia WebRTC + Socket.io**: Comunicação em tempo real de baixa latência.
-*   **Chat em Tempo Real**: Mensagens instantâneas durante as chamadas.
-*   **Controles de Mídia**: Mute/Unmute audio e vídeo, compartilhamento de tela (preparado).
+### 3. 📹 FoodTech Meet 2.0
+*   **Videochamadas Integradas**: Salas de reunião virtuais otimizadas.
+*   **Identidade Visual**: Nomes reais dos participantes no vídeo e chat (nada de IDs aleatórios!).
+*   **Chat Aprimorado**: Comunicação em tempo real com identificação clara.
+*   **Compartilhamento**: Ícones interativos e UX refinada.
 
-### 4. 📝 Editor Markdown
+### 4. 📅 Dashboard de Reuniões (Novo!)
+*   **Gestão Centralizada**: Visualize todas as suas reuniões e convites em um único lugar.
+*   **Agendamento Flexível**:
+    *   Defina data, horário e título.
+    *   **Proteção por Senha**: Crie reuniões privadas com verificação via modal de segurança.
+*   **Sistema de Convites**:
+    *   Busca inteligente de usuários do sistema.
+    *   Envio de convites diretos.
+*   **Card Inteligente**: Status de Host/Convidado e cópia rápida de link com feedback visual.
+
+### 5. 📝 Editor Markdown
 *   **Anotações Rápidas**: Bloco de notas com suporte a Markdown (Github Flavor).
 *   **Preview em Tempo Real**: Visualize a formatação enquanto digita.
 
