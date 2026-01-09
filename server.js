@@ -62,6 +62,28 @@ const upload = multer({
     }
 });
 
+// Configure multer for Personal Drive storage
+const driveStorageDir = path.join(__dirname, 'drive_storage');
+if (!fs.existsSync(driveStorageDir)) {
+    fs.mkdirSync(driveStorageDir, { recursive: true });
+}
+
+const driveStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, driveStorageDir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const driveUpload = multer({
+    storage: driveStorage,
+    limits: { fileSize: 500 * 1024 * 1024 } // 500MB limit
+});
+
+
 // Get all scopes
 app.get('/api/scopes', authenticateToken, async (req, res) => {
     try {
@@ -697,7 +719,228 @@ app.post('/api/admin/sql', authenticateToken, async (req, res) => {
     }
 });
 
+// ==================== PERSONAL DRIVE ROUTES ====================
+
+// Get folder contents (folders + files)
+app.get('/api/drive', authenticateToken, async (req, res) => {
+    try {
+        const { folder_id } = req.query;
+        // Verify folder owner if folder_id is provided
+        if (folder_id) {
+            const folderCheck = await db.query('SELECT user_id FROM folders WHERE id = $1', [folder_id]);
+            if (folderCheck.rows.length === 0) return res.status(404).json({ error: 'Folder not found' });
+            // For now, assuming personal drive: only access own folders or if admin? 
+            // Let's stick to "Personal": user_id must match req.user.id
+            // UNLESS SupreUser/Admin who might want to see everything? 
+            // Requirement: "Personal Drive module". Let's restrict to own files.
+            // If shared in future, we check permissions.
+            // For Strict Personal Drive:
+            if (folderCheck.rows[0].user_id !== req.user.id) {
+                return res.status(403).json({ error: 'Access denied' });
+            }
+        }
+
+        const userId = req.user.id;
+
+        // Fetch folders
+        let folderQuery = 'SELECT * FROM folders WHERE user_id = $1';
+        const folderParams = [userId];
+        if (folder_id) {
+            folderQuery += ' AND parent_id = $2';
+            folderParams.push(folder_id);
+        } else {
+            folderQuery += ' AND parent_id IS NULL';
+        }
+        folderQuery += ' ORDER BY name';
+        const folders = await db.query(folderQuery, folderParams);
+
+        // Fetch files
+        let fileQuery = 'SELECT * FROM files WHERE user_id = $1';
+        const fileParams = [userId];
+        if (folder_id) {
+            fileQuery += ' AND folder_id = $2';
+            fileParams.push(folder_id);
+        } else {
+            fileQuery += ' AND folder_id IS NULL';
+        }
+        fileQuery += ' ORDER BY name';
+        const files = await db.query(fileQuery, fileParams);
+
+        // Fetch breadcrumbs
+        let breadcrumbs = [];
+        if (folder_id) {
+            // Recursive CTE to get path
+            const breadcrumbQuery = `
+                WITH RECURSIVE folder_path AS (
+                    SELECT id, name, parent_id, 1 as level 
+                    FROM folders WHERE id = $1
+                    UNION ALL
+                    SELECT f.id, f.name, f.parent_id, fp.level + 1
+                    FROM folders f
+                    JOIN folder_path fp ON f.id = fp.parent_id
+                )
+                SELECT id, name FROM folder_path ORDER BY level DESC;
+            `;
+            const breadcrumbResult = await db.query(breadcrumbQuery, [folder_id]);
+            breadcrumbs = breadcrumbResult.rows;
+        }
+
+        res.json({
+            folders: folders.rows,
+            files: files.rows,
+            breadcrumbs: breadcrumbs
+        });
+
+    } catch (error) {
+        console.error('Error fetching drive content:', error);
+        res.status(500).json({ error: 'Failed to fetch drive content' });
+    }
+});
+
+// Create new folder
+app.post('/api/drive/folders', authenticateToken, async (req, res) => {
+    try {
+        const { name, parent_id } = req.body;
+        if (!name) return res.status(400).json({ error: 'Folder name is required' });
+
+        const result = await db.query(
+            'INSERT INTO folders (name, parent_id, user_id) VALUES ($1, $2, $3) RETURNING *',
+            [name, parent_id || null, req.user.id]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error creating folder:', error);
+        res.status(500).json({ error: 'Failed to create folder' });
+    }
+});
+
+// Upload file
+app.post('/api/drive/upload', authenticateToken, driveUpload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+        const { folder_id } = req.body;
+        const { originalname, filename, size, mimetype } = req.file;
+        const storagePath = `drive_storage/${filename}`; // Relative path or just filename. 
+        // Let's store relative to root or absolute?
+        // driveStorageDir is absolute. 
+        // Let's store relative to project root so we can resolve it later.
+        // Or relative to drive_storage dir.
+        // In DB we can store 'drive_storage/filename'.
+
+        const result = await db.query(
+            `INSERT INTO files 
+            (name, original_name, path, size, type, folder_id, user_id) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7) 
+            RETURNING *`,
+            [originalname, originalname, `drive_storage/${filename}`, size, mimetype, folder_id || null, req.user.id]
+        );
+
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error uploading file:', error);
+        res.status(500).json({ error: 'Failed to upload file' });
+    }
+});
+
+// Rename item
+app.put('/api/drive/rename', authenticateToken, async (req, res) => {
+    try {
+        const { type, id, name } = req.body; // type: 'folder' or 'file'
+        if (!name) return res.status(400).json({ error: 'New name is required' });
+
+        const table = type === 'folder' ? 'folders' : 'files';
+
+        // Check ownership
+        const check = await db.query(`SELECT user_id FROM ${table} WHERE id = $1`, [id]);
+        if (check.rows.length === 0) return res.status(404).json({ error: 'Item not found' });
+        if (check.rows[0].user_id !== req.user.id) return res.status(403).json({ error: 'Access denied' });
+
+        const result = await db.query(
+            `UPDATE ${table} SET name = $1 WHERE id = $2 RETURNING *`,
+            [name, id]
+        );
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error renaming item:', error);
+        res.status(500).json({ error: 'Failed to rename item' });
+    }
+});
+
+// Delete item
+app.delete('/api/drive/:type/:id', authenticateToken, async (req, res) => {
+    try {
+        const { type, id } = req.params;
+        const userId = req.user.id;
+
+        if (type === 'file') {
+            const fileRes = await db.query('SELECT * FROM files WHERE id = $1 AND user_id = $2', [id, userId]);
+            if (fileRes.rows.length === 0) return res.status(404).json({ error: 'File not found' });
+
+            const file = fileRes.rows[0];
+            const fullPath = path.join(__dirname, file.path); // Assuming path stored as 'drive_storage/filename'
+            if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+
+            await db.query('DELETE FROM files WHERE id = $1', [id]);
+
+        } else if (type === 'folder') {
+            // Recursive file deletion helper
+            const deleteFolderContents = async (folderId) => {
+                // Find subfolders
+                const subfolders = await db.query('SELECT id FROM folders WHERE parent_id = $1 AND user_id = $2', [folderId, userId]);
+                for (const sub of subfolders.rows) {
+                    await deleteFolderContents(sub.id);
+                }
+
+                // Find files in this folder
+                const files = await db.query('SELECT * FROM files WHERE folder_id = $1 AND user_id = $2', [folderId, userId]);
+                for (const file of files.rows) {
+                    const fullPath = path.join(__dirname, file.path);
+                    if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+                }
+            };
+
+            const folderRes = await db.query('SELECT * FROM folders WHERE id = $1 AND user_id = $2', [id, userId]);
+            if (folderRes.rows.length === 0) return res.status(404).json({ error: 'Folder not found' });
+
+            // Delete physical files recursively
+            await deleteFolderContents(id);
+
+            // Delete folder Record (DB cascade handles the rest of DB rows)
+            await db.query('DELETE FROM folders WHERE id = $1', [id]);
+        }
+
+        res.json({ message: 'Deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting item:', error);
+        res.status(500).json({ error: 'Failed to delete item' });
+    }
+});
+
+// Download/Stream file
+app.get('/api/drive/files/:id/content', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id; // Enforce security
+
+        const fileRes = await db.query('SELECT * FROM files WHERE id = $1', [id]);
+        if (fileRes.rows.length === 0) return res.status(404).json({ error: 'File not found' });
+
+        const file = fileRes.rows[0];
+        if (file.user_id !== userId) return res.status(403).json({ error: 'Access denied' });
+
+        const fullPath = path.join(__dirname, file.path);
+        if (!fs.existsSync(fullPath)) return res.status(404).json({ error: 'File not found on server' });
+
+        res.download(fullPath, file.original_name); // Sets disposition and streams
+    } catch (error) {
+        console.error('Error downloading file:', error);
+        res.status(500).json({ error: 'Failed to download file' });
+    }
+});
+
 // ==================== SOCKET.IO LOGIC ====================
+
 
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
